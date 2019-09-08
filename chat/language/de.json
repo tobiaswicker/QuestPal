@@ -4,7 +4,7 @@
 	"language_en": "Englisch",
 	"language_de": "Deutsch",
 	"language_set": "Sprache wurde auf Deutsch gesetzt.",
-	"language_detected": "Wir haben festgestellt, dass dein System auf *Deutsch* eingestellt ist.",
+	"language_detected": "Dein System ist auf *Deutsch* eingestellt.",
 	"overview": "Übersicht",
 	"accept_tos_privacy_first_0": "Um diesen Bot zu nutzen, musst du den *AGB* und der *Datenschutzerklärung* zustimmen.",
 	"accept_tos_privacy_first_1": "Lies dir hierzu bitte beide Dokumente durch und wähle *{i_accept}* wenn du diesen zustimmst oder andernfalls *{i_decline}*.",

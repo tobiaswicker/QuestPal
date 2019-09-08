@@ -4,7 +4,7 @@
 	"language_en": "English",
 	"language_de": "German",
 	"language_set": "Language set to English.",
-	"language_detected": "We have detected that your system is set to *English*.",
+	"language_detected": "Your system is set to *English*.",
 	"overview": "Overview",
 	"accept_tos_privacy_first_0": "To use this bot, you must agree to the *Terms of Service* and *Privacy Policy*.",
 	"accept_tos_privacy_first_1": "Please read both documents and select *{i_accept}* if you agree or otherwise *{i_decline}*.",

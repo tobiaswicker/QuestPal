@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMo
 from telegram.ext import CallbackContext
 
 from chat import profile
-from chat.tools import get_emoji, get_text, log_message, extract_ids
+from chat.tools import get_emoji, get_text, log_message, extract_ids, get_all_languages
 from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country
 
 # enable logging
@@ -27,6 +27,8 @@ def start(update: Update, context: CallbackContext):
 
     user = update.effective_user
 
+    languages = get_all_languages()
+
     # check for callback query aka button pressed
     if hasattr(update, 'callback_query') and update.callback_query is not None:
         is_button_action = True
@@ -36,7 +38,7 @@ def start(update: Update, context: CallbackContext):
         params = data.split()
 
         # user wants to change language
-        if len(params) == 3 and params[1] == 'choose_lang' and params[2] in ['en', 'de']:
+        if len(params) == 3 and params[1] == 'choose_lang' and params[2] in languages:
             if lang == params[2]:
                 text_modified = False
             else:
@@ -54,24 +56,33 @@ def start(update: Update, context: CallbackContext):
 
     # show language chooser if no language is set
     if lang is None:
-        text = f"{get_emoji('language')} *{get_text('en', 'language')} | " \
-               f"{get_text('de', 'language')}*\n\n"
+        languages_title = []
+        for lang_id in languages:
+            languages_title.append(get_text(lang_id, 'language'))
+
+        title = " | ".join(languages_title)
+        text = f"{get_emoji('language')} *{title}*\n\n"
+
+        for lang_id in languages:
+            text += f"{get_emoji(f'language_{lang_id}')} {get_text(lang_id, 'language_choose')}\n"
 
         possible_lang = user.language_code[:2]
-        if possible_lang in ['de', 'en']:
-            text += f"{get_emoji('info')} {get_text(possible_lang, 'language_detected')}\n\n"
-
-        text += f"{get_emoji('language_en')} {get_text('en', 'language_choose')}\n" \
-                f"{get_emoji('language_de')} {get_text('de', 'language_choose')}\n"
+        if possible_lang in languages:
+            text += f"\n{get_emoji('info')} {get_text(possible_lang, 'language_detected')}"
 
         popup_text = get_text('en', 'language_choose', format_str=False)
 
-        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('language_en')} "
-                                               f"{get_text(lang, 'language_en')}",
-                                          callback_data='overview choose_lang en')],
-                    [InlineKeyboardButton(text=f"{get_emoji('language_de')} "
-                                               f"{get_text(lang, 'language_de')}",
-                                          callback_data='overview choose_lang de')]]
+        keyboard = []
+        row = []
+        for lang_id in languages:
+            row.append(InlineKeyboardButton(text=f"{get_emoji(f'language_{lang_id}')} "
+                                                 f"{get_text(lang_id, f'language_{lang_id}')}",
+                                            callback_data=f'overview choose_lang {lang_id}'))
+            if len(row) == 2:
+                keyboard.append(row)
+                row = []
+        if row:
+            keyboard.append(row)
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -276,7 +287,7 @@ def info(update: Update, context: CallbackContext):
                f"_{get_text(lang, 'tos_preamble')}_\n" \
                f"{get_text(lang, 'tos_preamble_text').format(author=bot_author)}\n\n" \
                f"_§1 {get_text(lang, 'tos_§1_title')}_\n" \
-               f"{get_text(lang,'tos_§1_text').format(provider=bot_provider)}\n\n" \
+               f"{get_text(lang, 'tos_§1_text').format(provider=bot_provider)}\n\n" \
                f"_§2 {get_text(lang, 'tos_§2_title')}_\n" \
                f"{get_text(lang, 'tos_§2_text').format(bot=context.bot.username)}\n\n" \
                f"_§3 {get_text(lang, 'tos_§3_title')}_\n" \
@@ -373,9 +384,10 @@ def delete_data(update: Update, context: CallbackContext):
                                       message_id=msg_id,
                                       reply_markup=InlineKeyboardMarkup([]))
 
+        # delete last message after 10 seconds
         context.job_queue.run_once(callback=job_delete_message,
                                    context={'chat_id': chat_id, 'message_id': msg_id},
-                                   when=5)
+                                   when=10)
 
         # don't return sent here because we don't want to trigger logging which
         # would create a new user entry

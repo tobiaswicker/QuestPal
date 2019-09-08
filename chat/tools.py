@@ -13,6 +13,32 @@ logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
 _texts = {}
+_languages = []
+
+
+def load_all_languages():
+    """Load all language files"""
+    current_directory = os.path.dirname(os.path.realpath(__file__))
+    language_directory = 'language'
+    language_directory_path = os.path.join(current_directory, language_directory)
+
+    for filename in os.listdir(language_directory_path):
+        if filename.endswith(".json"):
+            lang_id = filename.replace('.json', '')
+            if lang_id not in _languages:
+                _languages.append(lang_id)
+            if lang_id in _texts:
+                continue
+            file_path = os.path.join(language_directory_path, filename)
+            with open(file=file_path, mode='r', encoding="utf-8") as data:
+                _texts[lang_id] = json.load(data)
+
+
+def get_all_languages():
+    """Get a list of supported languages"""
+    if not _languages:
+        load_all_languages()
+    return _languages
 
 
 def get_text(language, key, format_str=True):
@@ -22,19 +48,8 @@ def get_text(language, key, format_str=True):
         """Remove markdown text formatting from string"""
         return text.replace('`', '').replace('_', '').replace('*', '')
 
-    # load language files
-    current_directory = os.path.dirname(os.path.realpath(__file__))
-    language_directory = 'language'
-    language_directory_path = os.path.join(current_directory, language_directory)
-
-    for filename in os.listdir(language_directory_path):
-        if filename.endswith(".json"):
-            lang_id = filename.replace('.json', '')
-            if lang_id in _texts:
-                continue
-            file_path = os.path.join(language_directory_path, filename)
-            with open(file=file_path, mode='r', encoding="utf-8") as data:
-                _texts[lang_id] = json.load(data)
+    if not _texts:
+        load_all_languages()
 
     # try to access key for requested language
     if language in _texts and key in _texts[language]:
