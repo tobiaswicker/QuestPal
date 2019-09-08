@@ -1,0 +1,6 @@
+.idea/
+__pycache__/
+config.ini
+message_log/
+stored_data.json
+
