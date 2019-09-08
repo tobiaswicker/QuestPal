@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import logging
 import mysql.connector
 import requests
+
 from lxml import html
 from datetime import datetime, time
+
 from telegram import Bot, Update
+from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
     Updater, CallbackContext, Filters, messagequeue
-from telegram.utils.request import Request
 
 from bot.messagequeuebot import MQBot
+
 from chat import chat, conversation, tools, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
+
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id
 from quest.quest import Quest
 

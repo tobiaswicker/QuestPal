@@ -6,9 +6,9 @@ from geopy.geocoders import Nominatim
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import CallbackContext, ConversationHandler
 
-from chat import tools, profile
+from chat import profile
 from chat.profile import get_area_center_point, get_area_radius
-from chat.tools import get_emoji, get_text
+from chat.tools import get_emoji, get_text, log_message, extract_ids
 from chat.config import log_format, log_level, quest_map_url
 
 from quest.data import quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 STEP0, STEP1, STEP2, STEP3, STEP4, STEP5, STEP6, STEP7, STEP8 = range(9)
 
 
-@tools.log_message
+@log_message
 def select_area(update: Update, context: CallbackContext):
     """Let the user select the area for quest hunting"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -82,10 +82,10 @@ def select_area(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def set_quest_center_point(update: Update, context: CallbackContext):
     """Set the center point location, ask for radius"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 
@@ -138,10 +138,10 @@ def set_quest_center_point(update: Update, context: CallbackContext):
     return STEP1
 
 
-@tools.log_message
+@log_message
 def set_quest_radius(update: Update, context: CallbackContext):
     """Set the radius, show area summary"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 
@@ -187,10 +187,10 @@ def set_quest_radius(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-@tools.log_message
+@log_message
 def choose_quest_type(update: Update, context: CallbackContext):
     """Choose quest type"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 
@@ -247,10 +247,10 @@ def choose_quest_type(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def choose_pokemon(update: Update, context: CallbackContext):
     """Choose a pokemon quest"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -326,10 +326,10 @@ def choose_pokemon(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def choose_item(update: Update, context: CallbackContext):
     """Choose an item quest"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -402,10 +402,10 @@ def choose_item(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def choose_task(update: Update, context: CallbackContext):
     """Choose a quest task"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -484,10 +484,10 @@ def choose_task(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def start_hunt(update: Update, context: CallbackContext):
     """Start the quest hunt"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -589,10 +589,10 @@ def start_hunt(update: Update, context: CallbackContext):
     return STEP0
 
 
-@tools.log_message
+@log_message
 def set_start_location(update: Update, context: CallbackContext):
     """Set the hunting start location"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 
@@ -654,7 +654,8 @@ def set_start_location(update: Update, context: CallbackContext):
 
 
 def send_next_quest(update: Update, context: CallbackContext):
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    """Send the next quest in line"""
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 
@@ -714,14 +715,14 @@ def send_next_quest(update: Update, context: CallbackContext):
                                                       longitude=current_quest.longitude,
                                                       reply_markup=reply_markup)
 
-            (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = tools.extract_ids(sent_location)
+            (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_location)
             chat_data['hunt_location_message_id'] = sent_msg_id
 
             return STEP1
 
         popup_text = get_text(lang, 'hunt_quest_all_done', format_str=False)
 
-        text += f"{get_text(lang, 'hunt_quest_all_done')}\n\n" \
+        text += f"{get_emoji('congratulation')} {get_text(lang, 'hunt_quest_all_done')}\n\n" \
                 f"{get_text(lang, 'hunt_quest_new_quests_tomorrow')}"
 
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
@@ -765,7 +766,7 @@ def send_next_quest(update: Update, context: CallbackContext):
                                                 parse_mode=ParseMode.MARKDOWN,
                                                 chat_id=chat_id)
 
-        (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = tools.extract_ids(sent_message)
+        (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_message)
         chat_data['hunt_message_id'] = sent_msg_id
 
     # edit existing hunt message and delete location
@@ -793,16 +794,16 @@ def send_next_quest(update: Update, context: CallbackContext):
                                               longitude=current_quest.longitude,
                                               reply_markup=reply_markup)
 
-    (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = tools.extract_ids(sent_location)
+    (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_location)
     chat_data['hunt_location_message_id'] = sent_msg_id
 
     return STEP1
 
 
-@tools.log_message
+@log_message
 def quest_done(update: Update, context: CallbackContext):
     """Mark a quest as done / hunted"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     params = update.callback_query.data.split()
     stop_id = params[1]
@@ -824,7 +825,7 @@ def quest_done(update: Update, context: CallbackContext):
     return send_next_quest(update, context)
 
 
-@tools.log_message
+@log_message
 def defer_quest(update: Update, context: CallbackContext):
     """Defer a quest"""
     params = update.callback_query.data.split()
@@ -840,10 +841,10 @@ def defer_quest(update: Update, context: CallbackContext):
     return send_next_quest(update, context)
 
 
-@tools.log_message
+@log_message
 def end_hunt(update: Update, context: CallbackContext):
     """End the hunt"""
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     lang = profile.get_language(chat_id)
 

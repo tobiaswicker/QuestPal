@@ -4,8 +4,8 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import CallbackContext
 
-from chat import tools, profile
-from chat.tools import get_emoji, get_text
+from chat import profile
+from chat.tools import get_emoji, get_text, log_message, extract_ids
 from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country
 
 # enable logging
@@ -13,11 +13,11 @@ logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
 
-@tools.log_message
+@log_message
 def start(update: Update, context: CallbackContext):
     """Start interacting with this bot."""
     # extract ids from received message
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
     popup_text = ""
     show_as_popup = False
     # flag to avoid MessageNotModified errors
@@ -181,9 +181,9 @@ def start(update: Update, context: CallbackContext):
     return sent
 
 
-@tools.log_message
+@log_message
 def settings(update: Update, context: CallbackContext):
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -228,9 +228,9 @@ def settings(update: Update, context: CallbackContext):
                                          reply_markup=reply_markup)
 
 
-@tools.log_message
+@log_message
 def info(update: Update, context: CallbackContext):
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
@@ -340,9 +340,9 @@ def info(update: Update, context: CallbackContext):
                                          reply_markup=reply_markup)
 
 
-@tools.log_message
+@log_message
 def delete_data(update: Update, context: CallbackContext):
-    (chat_id, msg_id, user_id, username) = tools.extract_ids(update)
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
 
