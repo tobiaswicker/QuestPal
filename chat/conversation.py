@@ -13,6 +13,7 @@ from chat.config import log_format, log_level, quest_map_url
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
     get_task_by_id, get_all_tasks, get_id_by_task, get_all_quests_in_range, get_closest_quest
+from quest.quest import Quest
 
 # enable logging
 logging.basicConfig(format=log_format, level=log_level)
@@ -692,12 +693,13 @@ def send_next_quest(update: Update, context: CallbackContext):
         # check for deferred quests
         if deferred_quests:
             (closest_distance, closest_stop_id) = get_closest_quest(deferred_quests, chat_data['user_location'])
-            rounded_distance = "%.0f" % closest_distance
             current_quest = deferred_quests[closest_stop_id]
 
-            popup_text = get_text(lang, 'hunt_quest_count_deferred').format(deferred_count=len(deferred_quests))
-            text += f"{popup_text}\n" \
-                    f"{get_text(lang, 'hunt_quest_closest').format(distance=rounded_distance)}"
+            popup_text = get_text(lang, 'hunt_quest_count_deferred', format_str=False)\
+                .format(deferred=len(deferred_quests))
+
+            text += f"{get_text(lang, 'hunt_quest_count_deferred').format(deferred=len(deferred_quests))}\n\n" \
+                    f"{get_quest_summary(chat_data, current_quest, closest_distance)}"
 
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
@@ -751,19 +753,20 @@ def send_next_quest(update: Update, context: CallbackContext):
         return ConversationHandler.END
 
     (closest_distance, closest_stop_id) = get_closest_quest(quests_found, chat_data['user_location'])
-    rounded_distance = "%.0f" % closest_distance
     current_quest = quests_found[closest_stop_id]
 
     if deferred_quests:
-        popup_text = get_text(lang, 'hunt_quest_count_open_and_deferred').format(open_count=len(quests_found),
-                                                                                 deferred_count=len(deferred_quests))
-        text += f"{popup_text}\n"
-
+        popup_text = get_text(lang, 'hunt_quest_count_open_and_deferred', format_str=False)\
+            .format(open=len(quests_found), deferred=len(deferred_quests))
+        text += get_text(lang, 'hunt_quest_count_open_and_deferred').format(open=len(quests_found),
+                                                                            deferred=len(deferred_quests))
     else:
-        popup_text = get_text(lang, 'hunt_quest_count_open').format(open_count=len(quests_found))
-        text += f"{popup_text}\n"
+        popup_text = get_text(lang, 'hunt_quest_count_open', format_str=False).format(open=len(quests_found))
+        text += get_text(lang, 'hunt_quest_count_open').format(open=len(quests_found))
 
-    text += f"{get_text(lang, 'hunt_quest_closest').format(distance=rounded_distance)}"
+    text += "\n\n"
+
+    text += get_quest_summary(chat_data, current_quest, closest_distance)
 
     # send a new message if hunt just started
     if 'hunt_message_id' not in chat_data:
@@ -803,6 +806,23 @@ def send_next_quest(update: Update, context: CallbackContext):
     chat_data['hunt_location_message_id'] = sent_msg_id
 
     return STEP1
+
+
+def get_quest_summary(chat_data, quest: Quest, closest_distance):
+    """Get a summary for a quest"""
+    lang = profile.get_language(chat_data)
+
+    rounded_distance = "%.0f" % closest_distance
+
+    if quest.item_id:
+        reward = f"{quest.item_amount}x {get_item(lang, quest.item_id)}"
+    else:
+        reward = get_pokemon(lang, quest.pokemon_id)
+
+    return get_text(lang, 'hunt_quest_closest').format(quest_name=get_task_by_id(lang, quest.task),
+                                                       quest_reward=reward,
+                                                       pokestop_name=quest.stop_name,
+                                                       distance=rounded_distance)
 
 
 @log_message

@@ -71,7 +71,7 @@ def start(update: Update, context: CallbackContext):
         for lang_id in languages:
             text += f"{get_emoji(f'language_{lang_id}')} {get_text(lang_id, 'language_choose')}\n"
 
-        possible_lang = user.language_code[:2]
+        possible_lang = (user.language_code or 'en')[:2]
         if possible_lang in languages:
             text += f"\n{get_emoji('info')} {get_text(possible_lang, 'language_detected')}"
 
