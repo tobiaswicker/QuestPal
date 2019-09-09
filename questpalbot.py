@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 import logging
+import sys
+import traceback
+
 import mysql.connector
 import requests
 
 from lxml import html
 from datetime import datetime, time
 
-from telegram import Bot, Update
+from telegram import Bot, Update, ParseMode
+from telegram.utils.helpers import mention_markdown
 from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
     Updater, CallbackContext, Filters, messagequeue
@@ -15,7 +19,8 @@ from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, tools, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
-    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
+    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
+from chat.tools import extract_ids, get_text, get_emoji
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id
 from quest.quest import Quest
@@ -129,8 +134,47 @@ def load_shinies(context: CallbackContext):
 
 
 def error(update: Update, context: CallbackContext):
-    """Log Errors caused by Updates."""
-    logger.warning(f'Update "{update}" caused error "{context.error}"')
+    """Handle Errors caused by Updates."""
+    # inform user
+    if update.effective_message:
+        (chat_id, msg_id, user_id, username) = extract_ids(update)
+        lang = profile.get_language(chat_id)
+        text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
+               f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
+        update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN)
+
+    # get traceback
+    trace = "".join(traceback.format_tb(sys.exc_info()[2]))
+
+    error_details = ""
+
+    user_obj = update.effective_user
+    chat_obj = update.effective_chat
+
+    if user_obj:
+        error_details += f' with the user {mention_markdown(user_obj.id, user_obj.first_name)}'
+
+    if chat_obj:
+        error_details += f' within the {chat_obj.type} chat _{chat_obj.title}_'
+        if chat_obj.username:
+            error_details += f' (@{chat_obj.username})'
+
+    # only add the poll id if there is neither a user nor a chat associated with this update
+    if not error_details and update.poll:
+        error_details += f' with the poll id {update.poll.id}.'
+
+    # construct bug report for devs
+    text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+           f"The error `{context.error}` happened{error_details}.\n\n" \
+           f"Traceback:\n" \
+           f"`{trace}`"
+
+    # inform devs
+    for dev_id in bot_devs:
+        context.bot.send_message(dev_id, text, parse_mode=ParseMode.MARKDOWN)
+
+    # raise the error again, so the logger module can catch it
+    raise
 
 
 def main():

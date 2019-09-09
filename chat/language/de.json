@@ -104,6 +104,8 @@
 	"delete_this_message": "Nachricht Löschen",
 	"delete_this_message_done": "Nachricht gelöscht.",
 	"delete_this_message_fail": "Diese Nachricht kann nicht gelöscht werden.",
+	"error_occurred_title": "Ein Fehler Ist Aufgetreten",
+	"error_occurred_message": "Ein Fehler ist aufgetreten. Meine Entwickler werden benachrichtigt. Bitte versuche es erneut, warte auf einen Fix oder wende dich an @{provider}, falls der Fehler weiterhin auftritt.",
 	"unknown_pokemon": "Unbekanntes Pokémon",
 	"january": "Januar",
 	"february": "Februar",

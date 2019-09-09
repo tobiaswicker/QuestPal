@@ -101,6 +101,7 @@ def get_emoji(emoji):
         "tos": "📜",
         "contact": "💬",
         "add": "➕",
+        "bug": "👻",
         "question_mark": "❓"
     }
 
