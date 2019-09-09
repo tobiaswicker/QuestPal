@@ -9,7 +9,7 @@ import requests
 from lxml import html
 from datetime import datetime, time
 
-from telegram import Bot, Update, ParseMode
+from telegram import Bot, Update, ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.utils.helpers import mention_markdown
 from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
@@ -141,7 +141,10 @@ def error(update: Update, context: CallbackContext):
         lang = profile.get_language(context.chat_data)
         text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
                f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
-        update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN)
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
+                                          callback_data='overview')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
     # get traceback
     trace = "".join(traceback.format_tb(sys.exc_info()[2]))
