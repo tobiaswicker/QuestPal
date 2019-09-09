@@ -13,7 +13,7 @@ from telegram import Bot, Update, ParseMode
 from telegram.utils.helpers import mention_markdown
 from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
-    Updater, CallbackContext, Filters, messagequeue
+    Updater, CallbackContext, Filters, messagequeue, PicklePersistence
 
 from bot.messagequeuebot import MQBot
 
@@ -200,8 +200,10 @@ def main():
         # use the default telegram bot (without message queue)
         bot = Bot(bot_token, request=request)
 
+    persistence = PicklePersistence(filename='persistent_data.pickle')
+
     # create the EventHandler and pass it the bot's instance
-    updater = Updater(bot=bot, use_context=True)
+    updater = Updater(bot=bot, use_context=True, persistence=persistence)
 
     # jobs
     job_queue = updater.job_queue
@@ -242,7 +244,9 @@ def main():
         },
         # fallback to overview
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
-        allow_reentry=True
+        allow_reentry=True,
+        persistent=True,
+        name="select_area"
     )
     dp.add_handler(conversation_handler_select_area)
 
@@ -268,7 +272,9 @@ def main():
             conversation.STEP4: []
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
-        allow_reentry=True
+        allow_reentry=True,
+        persistent=True,
+        name="choose_quest"
     )
     dp.add_handler(conversation_handler_choose_quest)
 
@@ -293,7 +299,9 @@ def main():
                                                       pass_user_data=True)]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
-        allow_reentry=True
+        allow_reentry=True,
+        persistent=True,
+        name="start_hunt"
     )
     dp.add_handler(conversation_handler_start_hunt)
 
