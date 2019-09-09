@@ -138,7 +138,7 @@ def error(update: Update, context: CallbackContext):
     # inform user
     if update.effective_message:
         (chat_id, msg_id, user_id, username) = extract_ids(update)
-        lang = profile.get_language(chat_id)
+        lang = profile.get_language(context.chat_data)
         text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
                f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
         update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN)
@@ -179,9 +179,6 @@ def error(update: Update, context: CallbackContext):
 
 def main():
     logger.info("Starting Bot.")
-
-    # load all profiles
-    profile.load_profiles()
 
     # request object to bot
     request = Request(con_pool_size=8)

@@ -23,7 +23,9 @@ def start(update: Update, context: CallbackContext):
     # flag to avoid MessageNotModified errors
     text_modified = True
 
-    lang = profile.get_language(chat_id)
+    chat_data = context.chat_data
+
+    lang = profile.get_language(chat_data)
 
     user = update.effective_user
 
@@ -43,7 +45,7 @@ def start(update: Update, context: CallbackContext):
                 text_modified = False
             else:
                 lang = params[2]
-                profile.set_language(chat_id, lang)
+                profile.set_language(chat_data, lang)
             popup_text = get_text(lang, 'lang_set', format_str=False)
 
         # user accepted tos and privacy
@@ -111,7 +113,7 @@ def start(update: Update, context: CallbackContext):
                                 get_text(lang, 'overview'))
 
     # accepting tos and privacy is required
-    if not profile.has_accepted_tos_privacy(chat_id):
+    if not profile.has_accepted_tos_privacy(chat_data):
         i_accept = get_text(lang, 'i_accept')
         i_decline = get_text(lang, 'i_decline')
 
@@ -198,13 +200,15 @@ def settings(update: Update, context: CallbackContext):
 
     query = update.callback_query
 
-    lang = profile.get_language(chat_id)
+    chat_data = context.chat_data
+
+    lang = profile.get_language(chat_data)
 
     params = query.data.split()
 
     if len(params) == 3 and params[1] == "choose_lang" and params[2] in ['en', 'de']:
         lang = params[2]
-        profile.set_language(chat_id, lang)
+        profile.set_language(chat_data, lang)
         popup_text = get_text(lang, 'lang_set', format_str=False)
     else:
         popup_text = get_text(lang, 'settings_text0', format_str=False)
@@ -245,9 +249,11 @@ def info(update: Update, context: CallbackContext):
 
     query = update.callback_query
 
-    lang = profile.get_language(chat_id)
+    chat_data = context.chat_data
 
-    accepted_tos = profile.has_accepted_tos_privacy(chat_id)
+    lang = profile.get_language(chat_data)
+
+    accepted_tos = profile.has_accepted_tos_privacy(chat_data)
 
     keyboard = []
     text = ""
@@ -357,16 +363,17 @@ def delete_data(update: Update, context: CallbackContext):
 
     query = update.callback_query
 
-    lang = profile.get_language(chat_id)
+    chat_data = context.chat_data
+
+    lang = profile.get_language(chat_data)
 
     params = query.data.split()
 
     # permanently delete user data
     if len(params) == 2 and params[1] == 'yes':
-        # delete chat
-        profile.delete_profile(chat_id)
-        for entry in context.chat_data:
-            del context.chat_data[entry]
+        # delete chat data
+        for key in list(context.chat_data):
+            del context.chat_data[key]
 
         first_name = update.effective_user.first_name
 

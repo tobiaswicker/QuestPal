@@ -25,7 +25,6 @@ mysql_db = _mysql_config.get('database')
 log_format = '%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s'
 log_level = logging.INFO
 
-data_storage = 'stored_data.json'
 msg_folder = 'message_log'
 
 _map_config = _config['map']
