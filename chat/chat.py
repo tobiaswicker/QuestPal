@@ -5,10 +5,13 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMo
 from telegram.ext import CallbackContext
 
 from chat import profile
+from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
 from chat.tools import get_emoji, get_text, log_message, extract_ids, get_all_languages
-from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country
+from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country, quest_map_url
 
 # enable logging
+from quest.data import quests, get_all_quests_in_range
+
 logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
@@ -50,7 +53,7 @@ def start(update: Update, context: CallbackContext):
 
         # user accepted tos and privacy
         if len(params) == 2 and params[1] == 'accept_tos_privacy':
-            profile.accept_tos_privacy(chat_id)
+            profile.accept_tos_privacy(chat_data)
 
     # not a button press (i.e. text command)
     else:
@@ -153,12 +156,31 @@ def start(update: Update, context: CallbackContext):
 
         return sent
 
-    select_area = get_text(lang, 'select_area')
-    choose_quests = get_text(lang, 'choose_quests')
-    text += f"{get_text(lang, 'greeting_0').format(name=user.first_name)}\n\n" \
-            f"{get_text(lang, 'greeting_1').format(bot=context.bot.username)}\n\n" \
-            f"{get_text(lang, 'greeting_2').format(select_area=select_area, choose_quests=choose_quests)}\n" \
-            f"{get_text(lang, 'greeting_3').format(hunt_quests=get_text(lang, 'hunt_quests'))}\n\n"
+    text += f"{get_text(lang, 'overview_text0').format(name=user.first_name)}\n\n" \
+            f"{get_text(lang, 'overview_text1').format(bot=context.bot.username)}\n\n"
+
+    if not has_area(chat_data) and not has_quests(chat_data):
+        text += f"{get_emoji('warning')} {get_text(lang, 'no_area_nor_quests')}\n{get_text(lang, 'please_do_that')}"
+    elif not has_area(chat_data):
+        text += f"{get_emoji('warning')} {get_text(lang, 'no_area')}\n{get_text(lang, 'please_do_that')}"
+    elif not has_quests(chat_data):
+        text += f"{get_emoji('warning')} {get_text(lang, 'no_quests')}\n{get_text(lang, 'please_do_that')}"
+    else:
+        quests_found = get_all_quests_in_range(chat_data,
+                                               get_area_center_point(chat_data=chat_data),
+                                               get_area_radius(chat_data=chat_data))
+
+        if not quests_found:
+            text += f"{get_emoji('warning')} {get_text(lang, 'no_quests_summary')}\n" \
+                    f"{get_text(lang, 'no_quests_found_extended_info0')}\n" \
+                    f"{get_text(lang, 'no_quests_found_extended_info1')}\n\n" \
+                    f"{get_text(lang, 'no_quests_found_quest_count').format(total_quests_count=len(quests))}\n\n"
+
+            if quest_map_url:
+                text += get_text(lang, 'no_quests_found_map_hint').format(quest_map_url=quest_map_url)
+        else:
+            text += f"{get_text(lang, 'quests_summary').format(quests_count=len(quests_found))} " \
+                    f"{get_text(lang, 'quests_summary_hint').format(hunt_quests=get_text(lang, 'hunt_quests'))}"
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('area')} {get_text(lang, 'select_area')}",
                                       callback_data='select_area'),

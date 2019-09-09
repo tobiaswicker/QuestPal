@@ -37,4 +37,20 @@ def set_area_radius(chat_data, radius):
 
 
 def get_area_radius(chat_data):
+    """Get the radius of an area"""
     return chat_data['area_radius'] if 'area_radius' in chat_data else 0
+
+
+def has_area(chat_data):
+    """Check if the user has selected an area"""
+    area_center_point = get_area_center_point(chat_data=chat_data)
+    area_radius = get_area_radius(chat_data=chat_data)
+    return area_center_point[0] and area_center_point[1] and area_radius
+
+
+def has_quests(chat_data):
+    """Check if the user has chosen any quests"""
+    pokemon_exist = 'pokemon' in chat_data and chat_data['pokemon']
+    items_exist = 'items' in chat_data and chat_data['items']
+    tasks_exist = 'tasks' in chat_data and chat_data['tasks']
+    return pokemon_exist or items_exist or tasks_exist

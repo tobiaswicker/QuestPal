@@ -7,11 +7,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMo
 from telegram.ext import CallbackContext, ConversationHandler
 
 from chat import profile
-from chat.profile import get_area_center_point, get_area_radius
+from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
 from chat.tools import get_emoji, get_text, log_message, extract_ids
 from chat.config import log_format, log_level, quest_map_url
 
-from quest.data import quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
+from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
     get_task_by_id, get_all_tasks, get_id_by_task, get_all_quests_in_range, get_closest_quest
 
 # enable logging
@@ -502,19 +502,10 @@ def start_hunt(update: Update, context: CallbackContext):
 
     lang = profile.get_language(chat_data)
 
-    area_center_point = get_area_center_point(chat_data=chat_data)
-    area_radius = get_area_radius(chat_data=chat_data)
-
-    has_area = area_center_point[0] and area_center_point[1] and area_radius
-
-    pokemon_exist = 'pokemon' in chat_data and chat_data['pokemon']
-    items_exist = 'items' in chat_data and chat_data['items']
-    tasks_exist = 'tasks' in chat_data and chat_data['tasks']
-
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
-    if not has_area:
-        popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_area')}"
+    if not has_area(chat_data):
+        popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_area')}\n{get_text(lang, 'please_do_that')}"
         text += popup_text
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('area')} {get_text(lang, 'select_area')}",
@@ -538,8 +529,8 @@ def start_hunt(update: Update, context: CallbackContext):
                                      reply_markup=reply_markup)
         return ConversationHandler.END
 
-    if not pokemon_exist and not items_exist and not tasks_exist:
-        popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_quests')}"
+    if not has_quests(chat_data):
+        popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_quests')}\n{get_text(lang, 'please_do_that')}"
         text += popup_text
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('quest')} {get_text(lang, 'choose_quests')}",
@@ -642,10 +633,13 @@ def set_start_location(update: Update, context: CallbackContext):
 
     if not quests_found:
         text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
-               f"{get_text(lang, 'hunt_quest_none')}\n\n"
+               f"{get_emoji('warning')} {get_text(lang, 'no_quests_found')}\n" \
+               f"{get_text(lang, 'no_quests_found_extended_info0')}\n" \
+               f"{get_text(lang, 'no_quests_found_extended_info1')}\n\n" \
+               f"{get_text(lang, 'no_quests_found_quest_count').format(total_quests_count=len(quests))}\n\n"
 
         if quest_map_url:
-            text += get_text(lang, 'hunt_quest_none_map_hint').format(quest_map_url=quest_map_url)
+            text += get_text(lang, 'no_quests_found_map_hint').format(quest_map_url=quest_map_url)
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='overview')]]
