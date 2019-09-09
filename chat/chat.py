@@ -377,7 +377,8 @@ def delete_data(update: Update, context: CallbackContext):
 
         first_name = update.effective_user.first_name
 
-        text = f"{get_text(lang, 'delete_done')}\n\n" \
+        text = f"{get_emoji('trash')} *{get_text(lang, 'delete_data')}*\n\n" \
+               f"{get_text(lang, 'delete_done')}\n\n" \
                f"{get_text(lang, 'delete_good_bye').format(name=first_name)}"
 
         popup_text = f"{get_text(lang, 'delete_done', format_str=False)}\n\n" \
