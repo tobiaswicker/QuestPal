@@ -65,6 +65,7 @@
 	"hunt_quest_closest": "*Nächste Quest:*\n{quest_name}\n\n*Belohnung:*\n{quest_reward}\n\n*Pokéstop:*\n{pokestop_name}\n\n*Entfernung:*\n{distance} m Luftlinie\n\n*Standort:*",
 	"hunt_quest_all_done": "*Glückwunsch!* Du hast alle Quests für heute abgearbeitet!",
 	"hunt_quest_new_quests_tomorrow": "Komme morgen wieder, um weitere Quests zu jagen.",
+	"hunt_quest_finish_confirm": "Willst du wirklich die Jagd beenden?",
 	"hunt_quest_finished_early": "Du hast die Jagd vorzeitig beendet.",
 	"quest_done": "Quest Erledigt",
 	"defer_quest": "Quest Überspringen",

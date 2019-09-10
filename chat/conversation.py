@@ -708,7 +708,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                                           message_id=chat_data['hunt_message_id'],
                                           chat_id=chat_id)
 
-            context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+            if 'hunt_location_message_id' in chat_data:
+                context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
 
             keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
                                               callback_data=f'quest_done {closest_stop_id}')],
@@ -744,8 +745,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                                       message_id=chat_data['hunt_message_id'],
                                       chat_id=chat_id,
                                       reply_markup=reply_markup)
-
-        context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+        if 'hunt_location_message_id' in chat_data:
+            context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
 
         del chat_data['hunt_message_id']
         del chat_data['hunt_location_message_id']
@@ -786,7 +787,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                                       message_id=chat_data['hunt_message_id'],
                                       chat_id=chat_id)
 
-        context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+        if 'hunt_location_message_id' in chat_data:
+            context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
                                       callback_data=f'quest_done {closest_stop_id}'),
@@ -879,27 +881,51 @@ def end_hunt(update: Update, context: CallbackContext):
 
     query = update.callback_query
 
-    popup_text = get_text(lang, 'hunt_quest_finished_early')
+    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
-    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
-           f"{popup_text}"
+    hunt_message_id = chat_data['hunt_message_id']
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
-                                      callback_data=f'overview')]]
+    if len(query.data.split()) == 2:
+        popup_text = get_text(lang, 'hunt_quest_finished_early', format_str=False)
+
+        text += get_text(lang, 'hunt_quest_finished_early',)
+
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
+                                          callback_data=f'overview')]]
+
+        del chat_data['hunt_message_id']
+
+        return_value = ConversationHandler.END
+
+    else:
+        popup_text = get_text(lang, 'hunt_quest_finish_confirm', format_str=False)
+
+        text += get_text(lang, 'hunt_quest_finish_confirm',)
+
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('thumb_up')} {get_text(lang, 'yes')}",
+                                          callback_data=f'end_hunt yes'),
+                     InlineKeyboardButton(text=f"{get_emoji('thumb_down')} {get_text(lang, 'no')}",
+                                          callback_data=f'continue_hunt')]]
+
+        return_value = STEP1
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     context.bot.edit_message_text(text=text,
                                   parse_mode=ParseMode.MARKDOWN,
-                                  message_id=chat_data['hunt_message_id'],
+                                  message_id=hunt_message_id,
                                   chat_id=chat_id,
                                   reply_markup=reply_markup)
 
-    context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+    if 'hunt_location_message_id' in chat_data:
+        context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+        del chat_data['hunt_location_message_id']
 
-    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+    return return_value
 
-    del chat_data['hunt_message_id']
-    del chat_data['hunt_location_message_id']
 
-    return ConversationHandler.END
+def continue_hunt(update: Update, context: CallbackContext):
+    """Continue the hunt"""
+    return send_next_quest(update, context)

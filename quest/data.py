@@ -154,7 +154,7 @@ def get_all_quests_in_range(chat_data, center_point, radius):
     tasks = chat_data['tasks'] if 'tasks' in chat_data else []
 
     for stop_id, quest in quests.items():
-        if quest.pokemon_id in pokemon or quest.item_id in items or quest.task in tasks:
+        if quest.pokemon_id in pokemon or quest.item_id in items or quest.task_id in tasks:
             if great_circle(center_point, [quest.latitude, quest.longitude]).meters <= radius:
                 quests_found[stop_id] = quest
 

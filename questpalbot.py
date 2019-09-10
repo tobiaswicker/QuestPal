@@ -284,11 +284,7 @@ def main():
                                                       pass_user_data=True),
                                  CallbackQueryHandler(callback=conversation.choose_task,
                                                       pattern="^choose_task",
-                                                      pass_user_data=True)],
-            conversation.STEP1: [],
-            conversation.STEP2: [],
-            conversation.STEP3: [],
-            conversation.STEP4: []
+                                                      pass_user_data=True)]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
         allow_reentry=True,
@@ -315,6 +311,9 @@ def main():
                                                       pass_user_data=True),
                                  CallbackQueryHandler(callback=conversation.end_hunt,
                                                       pattern="^end_hunt",
+                                                      pass_user_data=True),
+                                 CallbackQueryHandler(callback=conversation.continue_hunt,
+                                                      pattern="^continue_hunt",
                                                       pass_user_data=True)]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
