@@ -22,7 +22,7 @@ from chat.config import bot_token, bot_use_message_queue, log_format, log_level,
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
 from chat.tools import extract_ids, get_text, get_emoji
 
-from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id
+from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id, get_task_by_id
 from quest.quest import Quest
 
 # enable logging
@@ -72,7 +72,9 @@ def load_quests(context: CallbackContext):
 
     db.close()
 
-    for (stop_id, stop_name, latitude, longitude, timestamp, pokemon_id, item_id, item_amount, task) in result:
+    unknown_tasks = {}
+
+    for (stop_id, stop_name, latitude, longitude, timestamp, pokemon_id, item_id, item_amount, task_id) in result:
 
         # skip quest if older than the existing quest entry
         if stop_id in quests and quests[stop_id].timestamp > timestamp:
@@ -93,10 +95,26 @@ def load_quests(context: CallbackContext):
                                 pokemon_id=pokemon_id,
                                 item_id=item_id,
                                 item_amount=item_amount,
-                                task=task)
+                                task_id=task_id)
+
+        if get_task_by_id('en', task_id) == task_id:
+            unknown_tasks[task_id] = quests[stop_id]
 
         if timestamp > latest_quest_scan:
             latest_quest_scan = timestamp + 1
+
+    if unknown_tasks:
+        text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+               f"The following tasks are unknown:\n\n"
+        # gather unknown tasks
+        for quest in unknown_tasks.values():
+            text += f"`task: {quest.task}\n" \
+                    f"pokemon_id: {quest.pokemon_id}\n" \
+                    f"item_id: {quest.item_id}\n" \
+                    f"item_amount: {quest.item_amount}`\n\n"
+        # inform devs
+        for dev_id in bot_devs:
+            context.bot.send_message(chat_id=dev_id, text=text, parse_mode=ParseMode.MARKDOWN)
 
     quest_pokemon_list.sort()
     quest_items_list.sort()
@@ -135,36 +153,37 @@ def load_shinies(context: CallbackContext):
 
 def error(update: Update, context: CallbackContext):
     """Handle Errors caused by Updates."""
-    # inform user
-    if update.effective_message:
-        (chat_id, msg_id, user_id, username) = extract_ids(update)
-        lang = profile.get_language(context.chat_data)
-        text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
-               f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
-        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
-                                          callback_data='overview')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
-
     # get traceback
     trace = "".join(traceback.format_tb(sys.exc_info()[2]))
 
     error_details = ""
 
-    user_obj = update.effective_user
-    chat_obj = update.effective_chat
+    # inform user
+    if update:
+        if update.effective_message:
+            (chat_id, msg_id, user_id, username) = extract_ids(update)
+            lang = profile.get_language(context.chat_data)
+            text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
+                   f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
+            keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
+                                              callback_data='overview')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
-    if user_obj:
-        error_details += f' with the user {mention_markdown(user_obj.id, user_obj.first_name)}'
+        user_obj = update.effective_user
+        chat_obj = update.effective_chat
 
-    if chat_obj:
-        error_details += f' within the {chat_obj.type} chat _{chat_obj.title}_'
-        if chat_obj.username:
-            error_details += f' (@{chat_obj.username})'
+        if user_obj:
+            error_details += f' with the user {mention_markdown(user_obj.id, user_obj.first_name)}'
 
-    # only add the poll id if there is neither a user nor a chat associated with this update
-    if not error_details and update.poll:
-        error_details += f' with the poll id {update.poll.id}.'
+        if chat_obj:
+            error_details += f' within the {chat_obj.type} chat _{chat_obj.title}_'
+            if chat_obj.username:
+                error_details += f' (@{chat_obj.username})'
+
+        # only add the poll id if there is neither a user nor a chat associated with this update
+        if not error_details and update.poll:
+            error_details += f' with the poll id {update.poll.id}.'
 
     # construct bug report for devs
     text = f"{get_emoji('bug')} *Bug Report*\n\n" \

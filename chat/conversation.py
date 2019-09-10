@@ -819,7 +819,7 @@ def get_quest_summary(chat_data, quest: Quest, closest_distance):
     else:
         reward = get_pokemon(lang, quest.pokemon_id)
 
-    return get_text(lang, 'hunt_quest_closest').format(quest_name=get_task_by_id(lang, quest.task),
+    return get_text(lang, 'hunt_quest_closest').format(quest_name=get_task_by_id(lang, quest.task_id),
                                                        quest_reward=reward,
                                                        pokestop_name=quest.stop_name,
                                                        distance=rounded_distance)
