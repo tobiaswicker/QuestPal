@@ -3,7 +3,7 @@ import os
 
 from geopy.distance import great_circle
 
-from chat.tools import get_text
+from chat.utils import get_text
 
 quests = {}
 

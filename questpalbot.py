@@ -17,10 +17,10 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 
 from bot.messagequeuebot import MQBot
 
-from chat import chat, conversation, tools, profile
+from chat import chat, conversation, utils, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
-from chat.tools import extract_ids, get_text, get_emoji
+from chat.utils import extract_ids, get_text, get_emoji
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id, get_task_by_id
 from quest.quest import Quest
@@ -324,8 +324,8 @@ def main():
     dp.add_handler(conversation_handler_start_hunt)
 
     # catch-all handler that just logs messages
-    dp.add_handler(MessageHandler(callback=tools.dummy_callback, filters=Filters.all))
-    dp.add_handler(CallbackQueryHandler(callback=tools.dummy_callback, pattern=".*"))
+    dp.add_handler(MessageHandler(callback=utils.dummy_callback, filters=Filters.all))
+    dp.add_handler(CallbackQueryHandler(callback=utils.dummy_callback, pattern=".*"))
 
     # log all errors
     dp.add_error_handler(error)

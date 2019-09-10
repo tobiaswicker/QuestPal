@@ -8,7 +8,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 
 from chat import profile
 from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
-from chat.tools import get_emoji, get_text, log_message, extract_ids
+from chat.utils import get_emoji, get_text, log_message, extract_ids
 from chat.config import log_format, log_level, quest_map_url
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \

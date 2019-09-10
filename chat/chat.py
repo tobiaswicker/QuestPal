@@ -6,7 +6,7 @@ from telegram.ext import CallbackContext
 
 from chat import profile
 from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
-from chat.tools import get_emoji, get_text, log_message, extract_ids, get_all_languages
+from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages
 from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country, quest_map_url
 
 # enable logging
