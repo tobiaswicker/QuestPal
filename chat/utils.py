@@ -3,7 +3,8 @@ import logging
 import os
 from enum import Enum
 
-from telegram import Update, message as telegram_message, InlineKeyboardMarkup, ParseMode
+from telegram import Update, InlineKeyboardMarkup, ParseMode
+from telegram.message import Message
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 from telegram.utils.promise import Promise
@@ -305,7 +306,7 @@ def log_message(func):
         else:
             message = func(update, context, user_data)
 
-        if isinstance(message, telegram_message.Message):
+        if isinstance(message, Message):
             # extract ids from sent message
             # noinspection PyTypeChecker
             (chat_id, msg_id, user_id, username) = extract_ids(message)

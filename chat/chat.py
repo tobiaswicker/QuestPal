@@ -5,8 +5,9 @@ from telegram import Update, InlineKeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from chat import profile, conversation
-from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
+from chat import conversation
+from chat.profile import get_language, set_language, has_accepted_tos_privacy, accept_tos_privacy, \
+    get_area_center_point, get_area_radius, has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages, MessageType, MessageCategory, \
     message_user, job_delete_message, delete_message_in_category
 from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country, quest_map_url
@@ -28,7 +29,7 @@ def start(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     user = update.effective_user
 
@@ -53,12 +54,12 @@ def start(update: Update, context: CallbackContext):
         # user wants to change language
         if len(params) == 3 and params[1] == 'choose_lang' and params[2] in languages:
             lang = params[2]
-            profile.set_language(chat_data, lang)
+            set_language(chat_data, lang)
             popup_text = get_text(lang, 'lang_set', format_str=False)
 
         # user accepted tos and privacy
         if len(params) == 2 and params[1] == 'accept_tos_privacy':
-            profile.accept_tos_privacy(chat_data)
+            accept_tos_privacy(chat_data)
 
     # not a button press (i.e. text command)
     else:
@@ -137,7 +138,7 @@ def start(update: Update, context: CallbackContext):
                                 get_text(lang, 'overview'))
 
     # accepting tos and privacy is required
-    if not profile.has_accepted_tos_privacy(chat_data):
+    if not has_accepted_tos_privacy(chat_data):
         i_accept = get_text(lang, 'i_accept')
         i_decline = get_text(lang, 'i_decline')
 
@@ -227,13 +228,13 @@ def settings(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     params = query.data.split()
 
     if len(params) == 3 and params[1] == "choose_lang" and params[2] in ['en', 'de']:
         lang = params[2]
-        profile.set_language(chat_data, lang)
+        set_language(chat_data, lang)
         popup_text = get_text(lang, 'lang_set', format_str=False)
     else:
         popup_text = get_text(lang, 'settings_text0', format_str=False)
@@ -276,9 +277,9 @@ def info(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
-    accepted_tos = profile.has_accepted_tos_privacy(chat_data)
+    accepted_tos = has_accepted_tos_privacy(chat_data)
 
     keyboard = []
     text = ""
@@ -390,7 +391,7 @@ def delete_data(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     params = query.data.split()
 

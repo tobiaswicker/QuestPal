@@ -6,8 +6,8 @@ from geopy.geocoders import Nominatim
 from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext, ConversationHandler
 
-from chat import profile
-from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
+from chat.profile import get_language, get_area_center_point, set_area_center_point, get_area_radius, set_area_radius, \
+    has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, message_user, MessageType, MessageCategory, \
     delete_message_in_category, job_delete_message
 from chat.config import log_format, log_level, quest_map_url
@@ -33,7 +33,7 @@ def select_area(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     popup_text = get_text(lang, 'select_area_text0', format_str=False)
 
@@ -54,8 +54,8 @@ def select_area(update: Update, context: CallbackContext):
 
     text += f"{get_text(lang, 'select_area_text0')}\n\n"
 
-    center_point = profile.get_area_center_point(chat_data=chat_data)
-    radius = profile.get_area_radius(chat_data=chat_data)
+    center_point = get_area_center_point(chat_data=chat_data)
+    radius = get_area_radius(chat_data=chat_data)
     if center_point[0] and center_point[1] and radius:
         current_area_text = get_text(lang, 'select_area_text1').format(center_point_latitude=center_point[0],
                                                                        center_point_longitude=center_point[1],
@@ -92,7 +92,7 @@ def set_quest_center_point(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     message = update.effective_message
 
@@ -108,8 +108,8 @@ def set_quest_center_point(update: Update, context: CallbackContext):
 
     # check for location
     elif message.location:
-        profile.set_area_center_point(chat_data=chat_data,
-                                      center_point=[message.location.latitude, message.location.longitude])
+        set_area_center_point(chat_data=chat_data,
+                              center_point=[message.location.latitude, message.location.longitude])
 
     # check for textual location
     elif message.text:
@@ -117,8 +117,8 @@ def set_quest_center_point(update: Update, context: CallbackContext):
         # noinspection PyBroadException
         try:
             geo_location = geo_locator.geocode(message.text, timeout=10)
-            profile.set_area_center_point(chat_data=chat_data,
-                                          center_point=[geo_location.latitude, geo_location.longitude])
+            set_area_center_point(chat_data=chat_data,
+                                  center_point=[geo_location.latitude, geo_location.longitude])
         except Exception:
             # delete input message after 5 seconds
             context.job_queue.run_once(callback=job_delete_message,
@@ -142,7 +142,7 @@ def set_quest_center_point(update: Update, context: CallbackContext):
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
 
-    center_point = profile.get_area_center_point(chat_data=chat_data)
+    center_point = get_area_center_point(chat_data=chat_data)
 
     # ask for radius
     text += get_text(lang, 'select_radius_text0').format(center_point_latitude=center_point[0],
@@ -172,7 +172,7 @@ def set_quest_radius(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     message = update.effective_message
 
@@ -184,7 +184,7 @@ def set_quest_radius(update: Update, context: CallbackContext):
 
     # make sure input is a number
     if regex_number.match(message.text) and int(message.text) > 0:
-        profile.set_area_radius(chat_data=chat_data, radius=int(message.text))
+        set_area_radius(chat_data=chat_data, radius=int(message.text))
     # start over
     else:
         # delete input message after 5 seconds
@@ -200,8 +200,8 @@ def set_quest_radius(update: Update, context: CallbackContext):
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
 
-    center_point = profile.get_area_center_point(chat_data=chat_data)
-    radius = profile.get_area_radius(chat_data=chat_data)
+    center_point = get_area_center_point(chat_data=chat_data)
+    radius = get_area_radius(chat_data=chat_data)
 
     area_selected_text = get_text(lang, 'area_selected_text0').format(center_point_latitude=center_point[0],
                                                                       center_point_longitude=center_point[1],
@@ -237,7 +237,7 @@ def choose_quest_type(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     query = update.callback_query
 
@@ -301,7 +301,7 @@ def choose_pokemon(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     params = query.data.split()
 
@@ -381,7 +381,7 @@ def choose_item(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     params = query.data.split()
 
@@ -458,7 +458,7 @@ def choose_task(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     params = query.data.split()
 
@@ -541,7 +541,7 @@ def start_hunt(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
@@ -628,7 +628,7 @@ def set_start_location(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     message = update.effective_message
 
@@ -716,7 +716,7 @@ def send_next_quest(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     query = update.callback_query
 
@@ -748,7 +748,7 @@ def send_next_quest(update: Update, context: CallbackContext):
             (closest_distance, closest_stop_id) = get_closest_quest(deferred_quests, chat_data['user_location'])
             current_quest = deferred_quests[closest_stop_id]
 
-            popup_text = get_text(lang, 'hunt_quest_count_deferred', format_str=False)\
+            popup_text = get_text(lang, 'hunt_quest_count_deferred', format_str=False) \
                 .format(deferred=len(deferred_quests))
 
             text += f"{get_text(lang, 'hunt_quest_count_deferred').format(deferred=len(deferred_quests))}\n\n" \
@@ -806,7 +806,7 @@ def send_next_quest(update: Update, context: CallbackContext):
     current_quest = quests_found[closest_stop_id]
 
     if deferred_quests:
-        popup_text = get_text(lang, 'hunt_quest_count_open_and_deferred', format_str=False)\
+        popup_text = get_text(lang, 'hunt_quest_count_open_and_deferred', format_str=False) \
             .format(open=len(quests_found), deferred=len(deferred_quests))
         text += get_text(lang, 'hunt_quest_count_open_and_deferred').format(open=len(quests_found),
                                                                             deferred=len(deferred_quests))
@@ -849,7 +849,7 @@ def send_next_quest(update: Update, context: CallbackContext):
 
 def get_quest_summary(chat_data, quest: Quest, closest_distance):
     """Get a summary for a quest"""
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     rounded_distance = "%.0f" % closest_distance
 
@@ -912,7 +912,7 @@ def end_hunt(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = profile.get_language(chat_data)
+    lang = get_language(chat_data)
 
     query = update.callback_query
 
@@ -922,7 +922,7 @@ def end_hunt(update: Update, context: CallbackContext):
     if query and len(query.data.split()) == 2:
         popup_text = get_text(lang, 'hunt_quest_finished_early', format_str=False)
 
-        text += get_text(lang, 'hunt_quest_finished_early',)
+        text += get_text(lang, 'hunt_quest_finished_early', )
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data=f'overview')]]
@@ -936,7 +936,7 @@ def end_hunt(update: Update, context: CallbackContext):
     else:
         popup_text = get_text(lang, 'hunt_quest_finish_confirm', format_str=False)
 
-        text += get_text(lang, 'hunt_quest_finish_confirm',)
+        text += get_text(lang, 'hunt_quest_finish_confirm', )
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('thumb_up')} {get_text(lang, 'yes')}",
                                           callback_data=f'end_hunt yes'),
