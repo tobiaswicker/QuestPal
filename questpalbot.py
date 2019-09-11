@@ -22,7 +22,7 @@ from chat.config import bot_token, bot_use_message_queue, log_format, log_level,
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory
 
-from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id, get_task_by_id
+from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_task_by_id
 from quest.quest import Quest
 
 # enable logging
@@ -135,16 +135,17 @@ def clear_quests(context: CallbackContext):
 
 def load_shinies(context: CallbackContext):
     """Load all shiny pokemon"""
-    address = 'https://www.p337.info/pokemongo/pages/shiny-release-dates/'
+    address = 'https://pokemongo.gamepress.gg/pokemon-go-shinies-list'
     raw = requests.get(address)
     data = html.fromstring(raw.content)
-    tr_elements = data.xpath('//tr//div[@class="sh_name"]/b/text()')
+    wild_shiny_links = data.xpath("//tr[contains(@class, 'Wild') or contains(@class, 'Research')]//a")
 
     shiny_pokemon_list.clear()
 
-    for i in range(0, len(tr_elements)):
-        dex_id = get_pokedex_id('en', tr_elements[i].replace(' Family', '').replace(' M', '♂').replace(' F', '♀'))
-        if dex_id > 0:
+    for link_tag in wild_shiny_links:
+        link = link_tag.attrib['href']
+        dex_id = int(link.replace('/pokemon/', '').replace('-alolan', ''))
+        if dex_id not in shiny_pokemon_list:
             shiny_pokemon_list.append(dex_id)
 
     shiny_pokemon_list.sort()
