@@ -9,7 +9,7 @@ import requests
 from lxml import html
 from datetime import datetime, time
 
-from telegram import Bot, Update, ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Bot, Update, ParseMode, InlineKeyboardButton
 from telegram.utils.helpers import mention_markdown
 from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
@@ -20,7 +20,7 @@ from bot.messagequeuebot import MQBot
 from chat import chat, conversation, utils, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
-from chat.utils import extract_ids, get_text, get_emoji
+from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_pokedex_id, get_task_by_id
 from quest.quest import Quest
@@ -108,7 +108,7 @@ def load_quests(context: CallbackContext):
                f"The following tasks are unknown:\n\n"
         # gather unknown tasks
         for quest in unknown_tasks.values():
-            text += f"`task: {quest.task}\n" \
+            text += f"`task: {quest.task_id}\n" \
                     f"pokemon_id: {quest.pokemon_id}\n" \
                     f"item_id: {quest.item_id}\n" \
                     f"item_amount: {quest.item_amount}`\n\n"
@@ -125,7 +125,6 @@ def load_quests(context: CallbackContext):
 def clear_quests(context: CallbackContext):
     """Clears all quests"""
     global latest_quest_scan
-
     # set last quest scan to midnight
     latest_quest_scan = datetime.combine(datetime.today(), time.min).timestamp()
 
@@ -167,8 +166,13 @@ def error(update: Update, context: CallbackContext):
                    f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
             keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                               callback_data='overview')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            update.effective_message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+            message_user(bot=context.bot,
+                         chat_id=chat_id,
+                         chat_data=context.chat_data,
+                         message_type=MessageType.message,
+                         payload=text,
+                         keyboard=keyboard,
+                         category=MessageCategory.main)
 
         user_obj = update.effective_user
         chat_obj = update.effective_chat

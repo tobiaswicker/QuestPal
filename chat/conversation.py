@@ -3,12 +3,13 @@ import re
 
 from geopy.geocoders import Nominatim
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram import Update, InlineKeyboardButton
 from telegram.ext import CallbackContext, ConversationHandler
 
 from chat import profile
 from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
-from chat.utils import get_emoji, get_text, log_message, extract_ids
+from chat.utils import get_emoji, get_text, log_message, extract_ids, message_user, MessageType, MessageCategory, \
+    delete_message_in_category, job_delete_message
 from chat.config import log_format, log_level, quest_map_url
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
@@ -43,9 +44,13 @@ def select_area(update: Update, context: CallbackContext):
     if center_point_invalid in context.chat_data and context.chat_data[center_point_invalid]:
         del context.chat_data[center_point_invalid]
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_message_invalid')}*\n\n"
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
     elif center_point_failed in context.chat_data and context.chat_data[center_point_failed]:
         del context.chat_data[center_point_failed]
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_geo_localization_failed')}*\n\n"
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
 
     text += f"{get_text(lang, 'select_area_text0')}\n\n"
 
@@ -65,23 +70,18 @@ def select_area(update: Update, context: CallbackContext):
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                       callback_data='back_to_overview')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
     if query:
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-        context.bot.edit_message_text(text=text,
-                                      parse_mode=ParseMode.MARKDOWN,
-                                      chat_id=chat_id,
-                                      message_id=msg_id,
-                                      reply_markup=reply_markup,
-                                      disable_web_page_preview=True)
-    else:
-        context.bot.send_message(text=text,
-                                 parse_mode=ParseMode.MARKDOWN,
-                                 chat_id=chat_id,
-                                 reply_markup=reply_markup,
-                                 disable_web_page_preview=True)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
     return STEP0
 
 
@@ -105,10 +105,12 @@ def set_quest_center_point(update: Update, context: CallbackContext):
     elif 'area_radius_message_invalid' in context.chat_data and context.chat_data['area_radius_message_invalid']:
         del context.chat_data['area_radius_message_invalid']
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_radius_invalid')}*\n\n"
+
     # check for location
     elif message.location:
         profile.set_area_center_point(chat_data=chat_data,
                                       center_point=[message.location.latitude, message.location.longitude])
+
     # check for textual location
     elif message.text:
         geo_locator = Nominatim()
@@ -118,12 +120,27 @@ def set_quest_center_point(update: Update, context: CallbackContext):
             profile.set_area_center_point(chat_data=chat_data,
                                           center_point=[geo_location.latitude, geo_location.longitude])
         except Exception:
+            # delete input message after 5 seconds
+            context.job_queue.run_once(callback=job_delete_message,
+                                       context={'chat_id': chat_id, 'message_id': msg_id},
+                                       when=5)
+
             context.chat_data['area_center_point_geo_localization_failed'] = True
             return select_area(update, context)
     # start over if user sent anything else
     else:
+        # delete input message after 5 seconds
+        context.job_queue.run_once(callback=job_delete_message,
+                                   context={'chat_id': chat_id, 'message_id': msg_id},
+                                   when=5)
+
         context.chat_data['area_center_point_message_invalid'] = True
         return select_area(update, context)
+
+    # delete input message after 5 seconds
+    context.job_queue.run_once(callback=job_delete_message,
+                               context={'chat_id': chat_id, 'message_id': msg_id},
+                               when=5)
 
     center_point = profile.get_area_center_point(chat_data=chat_data)
 
@@ -133,12 +150,17 @@ def set_quest_center_point(update: Update, context: CallbackContext):
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                       callback_data='back_to_overview')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.bot.send_message(text=text,
-                             parse_mode=ParseMode.MARKDOWN,
-                             chat_id=chat_id,
-                             reply_markup=reply_markup)
+    # delete main message so new main message appears beneath user input
+    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
 
     return STEP1
 
@@ -165,8 +187,18 @@ def set_quest_radius(update: Update, context: CallbackContext):
         profile.set_area_radius(chat_data=chat_data, radius=int(message.text))
     # start over
     else:
+        # delete input message after 5 seconds
+        context.job_queue.run_once(callback=job_delete_message,
+                                   context={'chat_id': chat_id, 'message_id': msg_id},
+                                   when=5)
+
         context.chat_data['area_radius_invalid'] = True
         return set_quest_center_point(update, context)
+
+    # delete input message after 5 seconds
+    context.job_queue.run_once(callback=job_delete_message,
+                               context={'chat_id': chat_id, 'message_id': msg_id},
+                               when=5)
 
     center_point = profile.get_area_center_point(chat_data=chat_data)
     radius = profile.get_area_radius(chat_data=chat_data)
@@ -183,13 +215,17 @@ def set_quest_radius(update: Update, context: CallbackContext):
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                       callback_data='overview')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.bot.send_message(text=text,
-                             parse_mode=ParseMode.MARKDOWN,
-                             chat_id=chat_id,
-                             reply_markup=reply_markup,
-                             disable_web_page_preview=True)
+    # delete main message so new main message appears beneath user input
+    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
 
     return ConversationHandler.END
 
@@ -242,15 +278,16 @@ def choose_quest_type(update: Update, context: CallbackContext):
                                       callback_data='choose_task')],
                 [InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                       callback_data='back_to_overview')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    context.bot.edit_message_text(text=text,
-                                  parse_mode=ParseMode.MARKDOWN,
-                                  chat_id=chat_id,
-                                  message_id=msg_id,
-                                  reply_markup=reply_markup)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
 
     return STEP0
 
@@ -322,15 +359,16 @@ def choose_pokemon(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='back_to_overview')])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    context.bot.edit_message_text(text=text,
-                                  parse_mode=ParseMode.MARKDOWN,
-                                  chat_id=chat_id,
-                                  message_id=msg_id,
-                                  reply_markup=reply_markup)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
     return STEP0
 
 
@@ -398,15 +436,16 @@ def choose_item(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='back_to_overview')])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    context.bot.edit_message_text(text=text,
-                                  parse_mode=ParseMode.MARKDOWN,
-                                  chat_id=chat_id,
-                                  message_id=msg_id,
-                                  reply_markup=reply_markup)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
     return STEP0
 
 
@@ -480,15 +519,16 @@ def choose_task(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='back_to_overview')])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    context.bot.edit_message_text(text=text,
-                                  parse_mode=ParseMode.MARKDOWN,
-                                  chat_id=chat_id,
-                                  message_id=msg_id,
-                                  reply_markup=reply_markup)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
     return STEP0
 
 
@@ -513,21 +553,18 @@ def start_hunt(update: Update, context: CallbackContext):
                                           callback_data='select_area')],
                     [InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                           callback_data='overview')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
 
         if query:
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=True)
 
-            context.bot.edit_message_text(text=text,
-                                          parse_mode=ParseMode.MARKDOWN,
-                                          chat_id=chat_id,
-                                          message_id=msg_id,
-                                          reply_markup=reply_markup)
-        else:
-            context.bot.send_message(text=text,
-                                     parse_mode=ParseMode.MARKDOWN,
-                                     chat_id=chat_id,
-                                     reply_markup=reply_markup)
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
+
         return ConversationHandler.END
 
     if not has_quests(chat_data):
@@ -538,21 +575,18 @@ def start_hunt(update: Update, context: CallbackContext):
                                           callback_data='choose_quest_type')],
                     [InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                           callback_data='overview')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
 
         if query:
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=True)
 
-            context.bot.edit_message_text(text=text,
-                                          parse_mode=ParseMode.MARKDOWN,
-                                          chat_id=chat_id,
-                                          message_id=msg_id,
-                                          reply_markup=reply_markup)
-        else:
-            context.bot.send_message(text=text,
-                                     parse_mode=ParseMode.MARKDOWN,
-                                     chat_id=chat_id,
-                                     reply_markup=reply_markup)
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
+
         return ConversationHandler.END
 
     start_location_invalid = 'start_location_message_invalid'
@@ -570,20 +604,16 @@ def start_hunt(update: Update, context: CallbackContext):
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                       callback_data='back_to_overview')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     if query:
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
-        context.bot.edit_message_text(text=text,
-                                      parse_mode=ParseMode.MARKDOWN,
-                                      chat_id=chat_id,
-                                      message_id=msg_id,
-                                      reply_markup=reply_markup)
-    else:
-        context.bot.send_message(text=text,
-                                 parse_mode=ParseMode.MARKDOWN,
-                                 chat_id=chat_id,
-                                 reply_markup=reply_markup)
+
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
 
     return STEP0
 
@@ -616,8 +646,21 @@ def set_start_location(update: Update, context: CallbackContext):
 
     # start over if user sent anything else
     else:
+        # delete input message after 5 seconds
+        context.job_queue.run_once(callback=job_delete_message,
+                                   context={'chat_id': chat_id, 'message_id': msg_id},
+                                   when=5)
+
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
         context.chat_data['start_location_message_invalid'] = True
         return start_hunt(update, context)
+
+    # delete input message after 5 seconds
+    context.job_queue.run_once(callback=job_delete_message,
+                               context={'chat_id': chat_id, 'message_id': msg_id},
+                               when=5)
 
     # clean up previous quest hunt
     if 'done_quests' in chat_data:
@@ -645,14 +688,21 @@ def set_start_location(update: Update, context: CallbackContext):
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='overview')]]
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
 
-        context.bot.send_message(text=text,
-                                 parse_mode=ParseMode.MARKDOWN,
-                                 chat_id=chat_id,
-                                 reply_markup=reply_markup)
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
 
         return ConversationHandler.END
+
+    # delete main message so new main message appears beneath user input
+    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
 
     return send_next_quest(update, context)
 
@@ -703,28 +753,26 @@ def send_next_quest(update: Update, context: CallbackContext):
 
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-            context.bot.edit_message_text(text=text,
-                                          parse_mode=ParseMode.MARKDOWN,
-                                          message_id=chat_data['hunt_message_id'],
-                                          chat_id=chat_id)
-
-            if 'hunt_location_message_id' in chat_data:
-                context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+            message_user(bot=context.bot,
+                         chat_id=chat_id,
+                         chat_data=chat_data,
+                         message_type=MessageType.message,
+                         payload=text,
+                         keyboard=[],
+                         category=MessageCategory.main)
 
             keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
                                               callback_data=f'quest_done {closest_stop_id}')],
                         [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                               callback_data='end_hunt')]]
 
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            sent_location = context.bot.send_location(chat_id=chat_id,
-                                                      latitude=current_quest.latitude,
-                                                      longitude=current_quest.longitude,
-                                                      reply_markup=reply_markup)
-
-            (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_location)
-            chat_data['hunt_location_message_id'] = sent_msg_id
+            message_user(bot=context.bot,
+                         chat_id=chat_id,
+                         chat_data=chat_data,
+                         message_type=MessageType.location,
+                         payload=[current_quest.latitude, current_quest.longitude],
+                         keyboard=keyboard,
+                         category=MessageCategory.location)
 
             return STEP1
 
@@ -738,18 +786,13 @@ def send_next_quest(update: Update, context: CallbackContext):
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data=f'overview')]]
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        context.bot.edit_message_text(text=text,
-                                      parse_mode=ParseMode.MARKDOWN,
-                                      message_id=chat_data['hunt_message_id'],
-                                      chat_id=chat_id,
-                                      reply_markup=reply_markup)
-        if 'hunt_location_message_id' in chat_data:
-            context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
-
-        del chat_data['hunt_message_id']
-        del chat_data['hunt_location_message_id']
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
 
         return ConversationHandler.END
 
@@ -769,26 +812,16 @@ def send_next_quest(update: Update, context: CallbackContext):
 
     text += get_quest_summary(chat_data, current_quest, closest_distance)
 
-    # send a new message if hunt just started
-    if 'hunt_message_id' not in chat_data:
-        sent_message = context.bot.send_message(text=text,
-                                                parse_mode=ParseMode.MARKDOWN,
-                                                chat_id=chat_id)
-
-        (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_message)
-        chat_data['hunt_message_id'] = sent_msg_id
-
-    # edit existing hunt message and delete location
-    else:
+    if query:
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-        context.bot.edit_message_text(text=text,
-                                      parse_mode=ParseMode.MARKDOWN,
-                                      message_id=chat_data['hunt_message_id'],
-                                      chat_id=chat_id)
-
-        if 'hunt_location_message_id' in chat_data:
-            context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=[],
+                 category=MessageCategory.main)
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
                                       callback_data=f'quest_done {closest_stop_id}'),
@@ -797,15 +830,13 @@ def send_next_quest(update: Update, context: CallbackContext):
                 [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                       callback_data='end_hunt')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    sent_location = context.bot.send_location(chat_id=chat_id,
-                                              latitude=current_quest.latitude,
-                                              longitude=current_quest.longitude,
-                                              reply_markup=reply_markup)
-
-    (sent_chat_id, sent_msg_id, sent_user_id, sent_username) = extract_ids(sent_location)
-    chat_data['hunt_location_message_id'] = sent_msg_id
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.location,
+                 payload=[current_quest.latitude, current_quest.longitude],
+                 keyboard=keyboard,
+                 category=MessageCategory.location)
 
     return STEP1
 
@@ -830,8 +861,6 @@ def get_quest_summary(chat_data, quest: Quest, closest_distance):
 @log_message
 def quest_done(update: Update, context: CallbackContext):
     """Mark a quest as done / hunted"""
-    (chat_id, msg_id, user_id, username) = extract_ids(update)
-
     params = update.callback_query.data.split()
     stop_id = params[1]
 
@@ -883,8 +912,6 @@ def end_hunt(update: Update, context: CallbackContext):
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
-    hunt_message_id = chat_data['hunt_message_id']
-
     if len(query.data.split()) == 2:
         popup_text = get_text(lang, 'hunt_quest_finished_early', format_str=False)
 
@@ -892,8 +919,6 @@ def end_hunt(update: Update, context: CallbackContext):
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data=f'overview')]]
-
-        del chat_data['hunt_message_id']
 
         return_value = ConversationHandler.END
 
@@ -911,17 +936,18 @@ def end_hunt(update: Update, context: CallbackContext):
 
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
 
-    context.bot.edit_message_text(text=text,
-                                  parse_mode=ParseMode.MARKDOWN,
-                                  message_id=hunt_message_id,
-                                  chat_id=chat_id,
-                                  reply_markup=reply_markup)
-
-    if 'hunt_location_message_id' in chat_data:
-        context.bot.delete_message(chat_id=chat_id, message_id=chat_data['hunt_location_message_id'])
-        del chat_data['hunt_location_message_id']
+    delete_message_in_category(bot=context.bot,
+                               chat_id=chat_id,
+                               chat_data=chat_data,
+                               category=MessageCategory.location)
 
     return return_value
 

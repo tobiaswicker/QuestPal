@@ -1,17 +1,19 @@
 import logging
 from datetime import datetime
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram import Update, InlineKeyboardButton
+from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
 from chat import profile
 from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
-from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages
+from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages, MessageType, MessageCategory, \
+    message_user, job_delete_message, delete_message_in_category
 from chat.config import bot_author, bot_provider, log_format, log_level, tos_date, tos_city, tos_country, quest_map_url
 
-# enable logging
 from quest.data import quests, get_all_quests_in_range
 
+# enable logging
 logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
@@ -23,8 +25,6 @@ def start(update: Update, context: CallbackContext):
     (chat_id, msg_id, user_id, username) = extract_ids(update)
     popup_text = ""
     show_as_popup = False
-    # flag to avoid MessageNotModified errors
-    text_modified = True
 
     chat_data = context.chat_data
 
@@ -44,11 +44,8 @@ def start(update: Update, context: CallbackContext):
 
         # user wants to change language
         if len(params) == 3 and params[1] == 'choose_lang' and params[2] in languages:
-            if lang == params[2]:
-                text_modified = False
-            else:
-                lang = params[2]
-                profile.set_language(chat_data, lang)
+            lang = params[2]
+            profile.set_language(chat_data, lang)
             popup_text = get_text(lang, 'lang_set', format_str=False)
 
         # user accepted tos and privacy
@@ -57,6 +54,22 @@ def start(update: Update, context: CallbackContext):
 
     # not a button press (i.e. text command)
     else:
+        # delete any old /start message
+        if 'start_command_message_id' in chat_data:
+            start_command_message_id = chat_data['start_command_message_id']
+            try:
+                context.bot.delete_message(chat_id=chat_id, message_id=start_command_message_id)
+                # delete any exiting main message as well
+                delete_message_in_category(bot=context.bot,
+                                           chat_id=chat_id,
+                                           chat_data=chat_data,
+                                           category=MessageCategory.main)
+            except BadRequest as e:
+                logger.warning(f"Failed to delete /start command message #{start_command_message_id} in "
+                               f"chat #{chat_id}: {e}")
+        # remember new /start message
+        chat_data['start_command_message_id'] = update.effective_message.message_id
+
         is_button_action = False
 
     # show language chooser if no language is set
@@ -89,28 +102,18 @@ def start(update: Update, context: CallbackContext):
         if row:
             keyboard.append(row)
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        sent = None
         # user pressed button, edit message
         if is_button_action:
             query = update.callback_query
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=show_as_popup)
 
-            if text_modified:
-                sent = context.bot.edit_message_text(text=text,
-                                                     parse_mode=ParseMode.MARKDOWN,
-                                                     chat_id=chat_id,
-                                                     message_id=msg_id,
-                                                     reply_markup=reply_markup)
-        # user sent command, send new message
-        else:
-            sent = context.bot.send_message(text=text,
-                                            parse_mode=ParseMode.MARKDOWN,
-                                            chat_id=chat_id,
-                                            reply_markup=reply_markup)
-
-        return sent
+        return message_user(bot=context.bot,
+                            chat_id=chat_id,
+                            chat_data=chat_data,
+                            message_type=MessageType.message,
+                            payload=text,
+                            keyboard=keyboard,
+                            category=MessageCategory.main)
 
     text = "{} *{}*\n\n".format(get_emoji('overview'),
                                 get_text(lang, 'overview'))
@@ -134,27 +137,18 @@ def start(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('thumb_down')} {get_text(lang, 'i_decline')}",
                                           callback_data='delete_data yes')]]
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        sent = None
         # user pressed button, edit message
         if is_button_action:
             query = update.callback_query
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=show_as_popup)
-            if text_modified:
-                sent = context.bot.edit_message_text(text=text,
-                                                     parse_mode=ParseMode.MARKDOWN,
-                                                     chat_id=chat_id,
-                                                     message_id=msg_id,
-                                                     reply_markup=reply_markup)
-        # user sent command, send new message
-        else:
-            sent = context.bot.send_message(text=text,
-                                            parse_mode=ParseMode.MARKDOWN,
-                                            chat_id=chat_id,
-                                            reply_markup=reply_markup)
 
-        return sent
+        return message_user(bot=context.bot,
+                            chat_id=chat_id,
+                            chat_data=chat_data,
+                            message_type=MessageType.message,
+                            payload=text,
+                            keyboard=keyboard,
+                            category=MessageCategory.main)
 
     text += f"{get_text(lang, 'overview_text0').format(name=user.first_name)}\n\n" \
             f"{get_text(lang, 'overview_text1').format(bot=context.bot.username)}\n\n"
@@ -193,27 +187,18 @@ def start(update: Update, context: CallbackContext):
                  InlineKeyboardButton(text=f"{get_emoji('info')} {get_text(lang, 'info')}",
                                       callback_data='info')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    sent = None
     # user pressed button, edit message
     if is_button_action:
         query = update.callback_query
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=show_as_popup)
-        if text_modified:
-            sent = context.bot.edit_message_text(text=text,
-                                                 parse_mode=ParseMode.MARKDOWN,
-                                                 chat_id=chat_id,
-                                                 message_id=msg_id,
-                                                 reply_markup=reply_markup)
-    # user sent command, send new message
-    else:
-        sent = context.bot.send_message(text=text,
-                                        parse_mode=ParseMode.MARKDOWN,
-                                        chat_id=chat_id,
-                                        reply_markup=reply_markup)
 
-    return sent
+    return message_user(bot=context.bot,
+                        chat_id=chat_id,
+                        chat_data=chat_data,
+                        message_type=MessageType.message,
+                        payload=text,
+                        keyboard=keyboard,
+                        category=MessageCategory.main)
 
 
 @log_message
@@ -254,15 +239,15 @@ def settings(update: Update, context: CallbackContext):
                 [InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                       callback_data='overview')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    return context.bot.edit_message_text(text=text,
-                                         parse_mode=ParseMode.MARKDOWN,
-                                         chat_id=chat_id,
-                                         message_id=msg_id,
-                                         reply_markup=reply_markup)
+    return message_user(bot=context.bot,
+                        chat_id=chat_id,
+                        chat_data=chat_data,
+                        message_type=MessageType.message,
+                        payload=text,
+                        keyboard=keyboard,
+                        category=MessageCategory.main)
 
 
 @log_message
@@ -368,15 +353,15 @@ def info(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='overview')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    return context.bot.edit_message_text(text=text,
-                                         parse_mode=ParseMode.MARKDOWN,
-                                         chat_id=chat_id,
-                                         message_id=msg_id,
-                                         reply_markup=reply_markup)
+    return message_user(bot=context.bot,
+                        chat_id=chat_id,
+                        chat_data=chat_data,
+                        message_type=MessageType.message,
+                        payload=text,
+                        keyboard=keyboard,
+                        category=MessageCategory.main)
 
 
 @log_message
@@ -393,9 +378,6 @@ def delete_data(update: Update, context: CallbackContext):
 
     # permanently delete user data
     if len(params) == 2 and params[1] == 'yes':
-        # delete chat data
-        for key in list(context.chat_data):
-            del context.chat_data[key]
 
         first_name = update.effective_user.first_name
 
@@ -408,16 +390,28 @@ def delete_data(update: Update, context: CallbackContext):
 
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=True)
 
-        context.bot.edit_message_text(text=text,
-                                      parse_mode=ParseMode.MARKDOWN,
-                                      chat_id=chat_id,
-                                      message_id=msg_id,
-                                      reply_markup=InlineKeyboardMarkup([]))
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=[],
+                     category=MessageCategory.main)
 
         # delete last message after 10 seconds
         context.job_queue.run_once(callback=job_delete_message,
                                    context={'chat_id': chat_id, 'message_id': msg_id},
                                    when=10)
+        # delete start message as well
+        if 'start_command_message_id' in chat_data:
+            start_command_message_id = chat_data['start_command_message_id']
+            context.job_queue.run_once(callback=job_delete_message,
+                                       context={'chat_id': chat_id, 'message_id': start_command_message_id},
+                                       when=10)
+
+        # delete chat data
+        for key in list(context.chat_data):
+            del context.chat_data[key]
 
         # don't return sent here because we don't want to trigger logging which
         # would create a new user entry
@@ -436,19 +430,12 @@ def delete_data(update: Update, context: CallbackContext):
                 [InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                       callback_data='overview')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
-    sent = context.bot.edit_message_text(text=text,
-                                         parse_mode=ParseMode.MARKDOWN,
-                                         chat_id=chat_id,
-                                         message_id=msg_id,
-                                         reply_markup=reply_markup)
-
-    return sent
-
-
-def job_delete_message(context: CallbackContext):
-    context.bot.delete_message(chat_id=context.job.context['chat_id'],
-                               message_id=context.job.context['message_id'])
+    return message_user(bot=context.bot,
+                        chat_id=chat_id,
+                        chat_data=chat_data,
+                        message_type=MessageType.message,
+                        payload=text,
+                        keyboard=keyboard,
+                        category=MessageCategory.main)

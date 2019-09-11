@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+from enum import Enum
 
-from telegram import Update, message as telegram_message
+from telegram import Update, message as telegram_message, InlineKeyboardMarkup, ParseMode
+from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 from telegram.utils.promise import Promise
 
@@ -116,6 +118,11 @@ def dummy_callback(update: Update, context: CallbackContext):
     # logger.info(f"VALUES: {strip_false(msg, '', ['from'])}")
 
     logger.info(f"Received unexpected message from {username} ({user_id}) in chat {chat_id}: {msg}")
+
+    try:
+        context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+    except BadRequest as e:
+        logger.warning(f"Failed to delete message #{msg_id} in chat #{chat_id}: {e}")
 
 
 def extract_ids(update):
@@ -310,3 +317,123 @@ def log_message(func):
         return message
 
     return func_wrapper
+
+
+class MessageType(Enum):
+    animation, audio, contact, document, game = range(0, 5)
+    invoice, location, message, photo, sticker = range(5, 10)
+    venue, video, video_note, voice = range(10, 14)
+
+
+class MessageCategory(Enum):
+    main = 1
+    location = 2
+
+
+def message_user(bot, chat_id, chat_data, message_type: MessageType, payload, keyboard, category=None):
+    """Send a message of a certain category to the user. Only one message per category is allowed."""
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # check if category is set
+    if category:
+        # check if this category has a message
+        if category in chat_data:
+            # get message details
+            old_message_id = chat_data[category]['message_id']
+            old_message_type = chat_data[category]['message_type']
+
+            # only text messages can be edited
+            if message_type == MessageType.message and old_message_type == MessageType.message:
+
+                # try to edit message
+                try:
+                    sent = bot.edit_message_text(text=payload,
+                                                 parse_mode=ParseMode.MARKDOWN,
+                                                 chat_id=chat_id,
+                                                 message_id=old_message_id,
+                                                 reply_markup=reply_markup,
+                                                 disable_web_page_preview=True)
+                # send a new message if editing failed
+                except BadRequest as e:
+
+                    # only log unknown errors
+                    if not e.message.startswith('Message is not modified'):
+                        logger.warning(f"Failed to edit message #{old_message_id} in chat #{chat_id}: {e}")
+
+                    # try to remove old message. editing might have failed due to no new message content
+                    try:
+                        bot.delete_message(chat_id=chat_id, message_id=old_message_id)
+                    except BadRequest as e:
+                        logger.warning(f"Failed to delete message #{old_message_id} in chat #{chat_id}: {e}")
+
+                    sent = bot.send_message(text=payload,
+                                            parse_mode=ParseMode.MARKDOWN,
+                                            chat_id=chat_id,
+                                            reply_markup=reply_markup,
+                                            disable_web_page_preview=True)
+
+                    # remember the new message id
+                    (_, msg_id, _, _) = extract_ids(sent)
+                    chat_data[category]['message_id'] = msg_id
+
+                return sent
+
+            # delete old message
+            try:
+                bot.delete_message(chat_id=chat_id, message_id=old_message_id)
+            except BadRequest as e:
+                logger.warning(f"Failed to delete message #{old_message_id} in chat #{chat_id}: {e}")
+            # delete message reference
+            del chat_data[category]
+
+    # send new message
+    if message_type == MessageType.message:
+        sent = bot.send_message(text=payload,
+                                parse_mode=ParseMode.MARKDOWN,
+                                chat_id=chat_id,
+                                reply_markup=reply_markup,
+                                disable_web_page_preview=True)
+    elif message_type == MessageType.location:
+        sent = bot.send_location(latitude=payload[0],
+                                 longitude=payload[1],
+                                 chat_id=chat_id,
+                                 reply_markup=reply_markup)
+    else:
+        logger.warning("Failed to send message: Unsupported MessageType.")
+        return
+
+    # check if message should be remembered
+    if category:
+        # get message id
+        (_, msg_id, _, _) = extract_ids(sent)
+        # ensure category exists
+        if category not in chat_data:
+            chat_data[category] = {}
+        # remember message id and type
+        chat_data[category]['message_id'] = msg_id
+        chat_data[category]['message_type'] = message_type
+
+    return sent
+
+
+def delete_message_in_category(bot, chat_id, chat_data, category):
+    if category in chat_data:
+        message_id = chat_data[category]['message_id']
+
+        try:
+            bot.delete_message(chat_id=chat_id, message_id=message_id)
+        except BadRequest as e:
+            logger.warning(f"Failed to delete message #{message_id} for category #{category} in chat #{chat_id}: {e}")
+
+        del chat_data[category]
+
+
+def job_delete_message(context: CallbackContext):
+    chat_id = context.job.context['chat_id']
+    message_id = context.job.context['message_id']
+    try:
+        context.bot.delete_message(chat_id=chat_id,
+                                   message_id=message_id)
+    except BadRequest as e:
+        logger.warning(f"Failed to delete message #{message_id} in chat #{chat_id}: {e}")
