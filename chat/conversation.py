@@ -41,13 +41,13 @@ def select_area(update: Update, context: CallbackContext):
 
     center_point_invalid = 'area_center_point_message_invalid'
     center_point_failed = 'area_center_point_geo_localization_failed'
-    if center_point_invalid in context.chat_data and context.chat_data[center_point_invalid]:
-        del context.chat_data[center_point_invalid]
+    if center_point_invalid in chat_data and chat_data[center_point_invalid]:
+        del chat_data[center_point_invalid]
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_message_invalid')}*\n\n"
         # delete main message so new main message appears beneath user input
         delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
-    elif center_point_failed in context.chat_data and context.chat_data[center_point_failed]:
-        del context.chat_data[center_point_failed]
+    elif center_point_failed in chat_data and chat_data[center_point_failed]:
+        del chat_data[center_point_failed]
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_geo_localization_failed')}*\n\n"
         # delete main message so new main message appears beneath user input
         delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
@@ -99,11 +99,11 @@ def set_quest_center_point(update: Update, context: CallbackContext):
     text = f"{get_emoji('radius')} *{get_text(lang, 'select_radius')}*\n\n"
 
     # show invalid radius warning
-    if 'area_radius_invalid' in context.chat_data and context.chat_data['area_radius_invalid']:
-        del context.chat_data['area_radius_invalid']
+    if 'area_radius_invalid' in chat_data and chat_data['area_radius_invalid']:
+        del chat_data['area_radius_invalid']
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_radius_invalid')}*\n\n"
-    elif 'area_radius_message_invalid' in context.chat_data and context.chat_data['area_radius_message_invalid']:
-        del context.chat_data['area_radius_message_invalid']
+    elif 'area_radius_message_invalid' in chat_data and chat_data['area_radius_message_invalid']:
+        del chat_data['area_radius_message_invalid']
         text += f"{get_emoji('warning')} *{get_text(lang, 'selected_radius_invalid')}*\n\n"
 
     # check for location
@@ -125,7 +125,7 @@ def set_quest_center_point(update: Update, context: CallbackContext):
                                        context={'chat_id': chat_id, 'message_id': msg_id},
                                        when=5)
 
-            context.chat_data['area_center_point_geo_localization_failed'] = True
+            chat_data['area_center_point_geo_localization_failed'] = True
             return select_area(update, context)
     # start over if user sent anything else
     else:
@@ -134,7 +134,7 @@ def set_quest_center_point(update: Update, context: CallbackContext):
                                    context={'chat_id': chat_id, 'message_id': msg_id},
                                    when=5)
 
-        context.chat_data['area_center_point_message_invalid'] = True
+        chat_data['area_center_point_message_invalid'] = True
         return select_area(update, context)
 
     # delete input message after 5 seconds
@@ -589,6 +589,9 @@ def start_hunt(update: Update, context: CallbackContext):
 
         return ConversationHandler.END
 
+    # set hunting flag
+    chat_data['is_hunting'] = True
+
     start_location_invalid = 'start_location_message_invalid'
     start_location_failed = 'start_location_geo_localization_failed'
     if start_location_invalid in chat_data and chat_data[start_location_invalid]:
@@ -667,9 +670,6 @@ def set_start_location(update: Update, context: CallbackContext):
         del chat_data['done_quests']
     if 'deferred_quests' in chat_data:
         del chat_data['deferred_quests']
-    if 'hunt_message_id' in chat_data:
-        del chat_data['hunt_message_id']
-        del chat_data['hunt_location_message_id']
 
     quests_found = get_all_quests_in_range(chat_data,
                                            get_area_center_point(chat_data=chat_data),
@@ -698,6 +698,9 @@ def set_start_location(update: Update, context: CallbackContext):
                      payload=text,
                      keyboard=keyboard,
                      category=MessageCategory.main)
+
+        if 'is_hunting' in chat_data:
+            del chat_data['is_hunting']
 
         return ConversationHandler.END
 
@@ -793,6 +796,9 @@ def send_next_quest(update: Update, context: CallbackContext):
                      payload=text,
                      keyboard=keyboard,
                      category=MessageCategory.main)
+
+        if 'is_hunting' in chat_data:
+            del chat_data['is_hunting']
 
         return ConversationHandler.END
 
@@ -912,7 +918,8 @@ def end_hunt(update: Update, context: CallbackContext):
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
-    if len(query.data.split()) == 2:
+    # end hunt if user really wants to stop hunting
+    if query and len(query.data.split()) == 2:
         popup_text = get_text(lang, 'hunt_quest_finished_early', format_str=False)
 
         text += get_text(lang, 'hunt_quest_finished_early',)
@@ -920,8 +927,12 @@ def end_hunt(update: Update, context: CallbackContext):
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data=f'overview')]]
 
+        if 'is_hunting' in chat_data:
+            del chat_data['is_hunting']
+
         return_value = ConversationHandler.END
 
+    # ask for confirmation
     else:
         popup_text = get_text(lang, 'hunt_quest_finish_confirm', format_str=False)
 
@@ -934,8 +945,11 @@ def end_hunt(update: Update, context: CallbackContext):
 
         return_value = STEP1
 
-    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+    # make sure this is a button callback call
+    if query:
+        context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
+    # update main message
     message_user(bot=context.bot,
                  chat_id=chat_id,
                  chat_data=chat_data,
@@ -944,6 +958,7 @@ def end_hunt(update: Update, context: CallbackContext):
                  keyboard=keyboard,
                  category=MessageCategory.main)
 
+    # delete location message
     delete_message_in_category(bot=context.bot,
                                chat_id=chat_id,
                                chat_data=chat_data,

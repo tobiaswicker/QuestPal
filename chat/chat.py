@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from chat import profile
+from chat import profile, conversation
 from chat.profile import get_area_center_point, get_area_radius, has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages, MessageType, MessageCategory, \
     message_user, job_delete_message, delete_message_in_category
@@ -40,6 +40,14 @@ def start(update: Update, context: CallbackContext):
 
         data = update.callback_query.data
 
+        # remove location message and hunting flag on fallback trigger
+        if 'is_hunting'in chat_data:
+            delete_message_in_category(bot=context.bot,
+                                       chat_id=chat_id,
+                                       chat_data=chat_data,
+                                       category=MessageCategory.location)
+            del chat_data['is_hunting']
+
         params = data.split()
 
         # user wants to change language
@@ -54,12 +62,22 @@ def start(update: Update, context: CallbackContext):
 
     # not a button press (i.e. text command)
     else:
-        # delete any old /start message
+        # if user is still hunting, remove the /start call and ask for end hunt confirmation
+        if 'is_hunting' in chat_data:
+            try:
+                context.bot.delete_message(chat_id=chat_id, message_id=update.effective_message.message_id)
+            except BadRequest as e:
+                logger.warning(f"Failed to delete /start command message #{update.effective_message.message_id} in "
+                               f"chat #{chat_id}: {e}")
+            return conversation.end_hunt(update, context)
+
+        # check for old /start message
         if 'start_command_message_id' in chat_data:
             start_command_message_id = chat_data['start_command_message_id']
             try:
+                # delete old /start message
                 context.bot.delete_message(chat_id=chat_id, message_id=start_command_message_id)
-                # delete any exiting main message as well
+                # delete any exiting main message as well so new main message appears beneath new /start command
                 delete_message_in_category(bot=context.bot,
                                            chat_id=chat_id,
                                            chat_data=chat_data,
