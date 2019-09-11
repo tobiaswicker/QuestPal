@@ -9,7 +9,7 @@ import requests
 from lxml import html
 from datetime import datetime, time
 
-from telegram import Bot, Update, ParseMode, InlineKeyboardButton
+from telegram import Bot, Update, InlineKeyboardButton
 from telegram.utils.helpers import mention_markdown
 from telegram.utils.request import Request
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, \
@@ -19,8 +19,9 @@ from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
-    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_devs, bot_provider
-from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory
+    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_provider
+from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
+    set_bot
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_task_by_id
 from quest.quest import Quest
@@ -113,8 +114,7 @@ def load_quests(context: CallbackContext):
                     f"item_id: {quest.item_id}\n" \
                     f"item_amount: {quest.item_amount}`\n\n"
         # inform devs
-        for dev_id in bot_devs:
-            context.bot.send_message(chat_id=dev_id, text=text, parse_mode=ParseMode.MARKDOWN)
+        notify_devs(text=text)
 
     quest_pokemon_list.sort()
     quest_items_list.sort()
@@ -195,10 +195,7 @@ def error(update: Update, context: CallbackContext):
            f"The error `{context.error}` happened{error_details}.\n\n" \
            f"Traceback:\n" \
            f"`{trace}`"
-
-    # inform devs
-    for dev_id in bot_devs:
-        context.bot.send_message(dev_id, text, parse_mode=ParseMode.MARKDOWN)
+    notify_devs(text=text)
 
     # raise the error again, so the logger module can catch it
     raise
@@ -223,6 +220,8 @@ def main():
         logger.info("Using no MessageQueue. You may run into flood limits.")
         # use the default telegram bot (without message queue)
         bot = Bot(bot_token, request=request)
+
+    set_bot(bot=bot)
 
     persistence = PicklePersistence(filename='persistent_data.pickle')
 

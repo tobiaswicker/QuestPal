@@ -9,7 +9,7 @@ from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 from telegram.utils.promise import Promise
 
-from chat.config import msg_folder, log_format, log_level
+from chat.config import msg_folder, log_format, log_level, bot_devs
 
 # enable logging
 logging.basicConfig(format=log_format, level=log_level)
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 _texts = {}
 _languages = []
+
+_bot = None
 
 
 def load_all_languages():
@@ -61,12 +63,17 @@ def get_text(language, key, format_str=True):
         else:
             return remove_format(_texts[language][key])
 
-    # fallback to german if translation in requested language does not exist
+    # fallback to english if translation in requested language does not exist
     elif key in _texts['en']:
         if format_str:
             return _texts['en'][key]
         else:
             return remove_format(_texts['en'][key])
+
+    # construct bug report for devs
+    text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+           f"Could not find text for key `{key}` in `{language}`."
+    notify_devs(text=text)
 
     # no translation available
     return "Text not found."
@@ -107,6 +114,12 @@ def get_emoji(emoji):
         "bug": "👻",
         "question_mark": "❓"
     }
+
+    if emoji not in emojis:
+        # construct bug report for devs
+        text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+               f"The emoji named `{emoji}` could not be found."
+        notify_devs(text=text)
 
     return emojis.get(emoji, emojis.get('question_mark', '?'))
 
@@ -438,3 +451,16 @@ def job_delete_message(context: CallbackContext):
                                    message_id=message_id)
     except BadRequest as e:
         logger.warning(f"Failed to delete message #{message_id} in chat #{chat_id}: {e}")
+
+
+def set_bot(bot):
+    """Remember a reference to the bot instance."""
+    global _bot
+    _bot = bot
+
+
+def notify_devs(text):
+    """Inform all devs about a certain event."""
+    # inform devs
+    for dev_id in bot_devs:
+        _bot.send_message(chat_id=dev_id, text=text, parse_mode=ParseMode.MARKDOWN)

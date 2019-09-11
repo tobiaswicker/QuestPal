@@ -235,7 +235,7 @@ def settings(update: Update, context: CallbackContext):
     if len(params) == 3 and params[1] == "choose_lang" and params[2] in ['en', 'de']:
         lang = params[2]
         set_language(chat_data, lang)
-        popup_text = get_text(lang, 'lang_set', format_str=False)
+        popup_text = get_text(lang, 'language_set', format_str=False)
     else:
         popup_text = get_text(lang, 'settings_text0', format_str=False)
 
