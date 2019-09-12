@@ -688,7 +688,7 @@ def ask_for_location(update: Update, context: CallbackContext):
                  keyboard=keyboard,
                  category=MessageCategory.main)
 
-    return STEP0
+    return STEP1
 
 
 @log_message
@@ -883,7 +883,7 @@ def send_next_quest(update: Update, context: CallbackContext):
                          keyboard=keyboard,
                          category=MessageCategory.location)
 
-            return STEP1
+            return STEP2
 
         popup_text = get_text(lang, 'hunt_quest_all_done', format_str=False)
 
@@ -939,7 +939,7 @@ def send_next_quest(update: Update, context: CallbackContext):
     row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
                                 callback_data=f'quest_fetched {closest_stop_id}')]
 
-    if quests_found > 1 and not skipped_quests:
+    if len(quests_found) > 1 or skipped_quests:
         row.append(InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
                                         callback_data=f'quest_skip {closest_stop_id}'))
     row.append(InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
@@ -964,7 +964,7 @@ def send_next_quest(update: Update, context: CallbackContext):
                  keyboard=keyboard,
                  category=MessageCategory.location)
 
-    return STEP1
+    return STEP2
 
 
 def get_quest_summary(chat_data, quest: Quest, closest_distance):
@@ -1078,7 +1078,7 @@ def quest_ignore(update: Update, context: CallbackContext):
                                chat_data=chat_data,
                                category=MessageCategory.location)
 
-    return STEP1
+    return STEP2
 
 
 @log_message
@@ -1128,7 +1128,7 @@ def end_hunt(update: Update, context: CallbackContext):
                      InlineKeyboardButton(text=f"{get_emoji('thumb_down')} {get_text(lang, 'no')}",
                                           callback_data='continue_hunt')]]
 
-        return_value = STEP1
+        return_value = STEP2
 
     # make sure this is a button callback call
     if query:
