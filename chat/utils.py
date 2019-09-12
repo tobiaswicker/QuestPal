@@ -65,6 +65,12 @@ def get_text(language, key, format_str=True):
 
     # fallback to english if translation in requested language does not exist
     elif key in _texts['en']:
+
+        # construct bug report for devs
+        text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+               f"No translation found for key `{key}` in `{language}`."
+        notify_devs(text=text)
+
         if format_str:
             return _texts['en'][key]
         else:
