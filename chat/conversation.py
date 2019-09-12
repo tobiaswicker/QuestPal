@@ -771,7 +771,11 @@ def send_next_quest(update: Update, context: CallbackContext):
                          category=MessageCategory.main)
 
             keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
-                                              callback_data=f'quest_fetched {closest_stop_id}')],
+                                              callback_data=f'quest_fetched {closest_stop_id}'),
+                         InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
+                                              callback_data=f'quest_skip {closest_stop_id}'),
+                         InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
+                                              callback_data=f'quest_ignore {closest_stop_id}')],
                         [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                               callback_data='end_hunt')]]
 
