@@ -71,7 +71,7 @@
 	"hunt_quest_finish_confirm": "Willst du wirklich die Jagd beenden?",
 	"hunt_quest_finished_early": "Du hast die Jagd vorzeitig beendet.",
 	"quest_fetched": "Abgeholt",
-	"quest_skipped": "Später",
+	"quest_skip": "Später",
 	"quest_ignore": "Ignorieren",
     "quests_enqueue_skipped": "Übersprungene Einreihen",
 	"end_hunt": "Jagd beenden",
