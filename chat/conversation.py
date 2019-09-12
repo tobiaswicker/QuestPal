@@ -590,15 +590,84 @@ def start_hunt(update: Update, context: CallbackContext):
 
         return ConversationHandler.END
 
+    # skip asking for hund continuation / reset if the user has seen this question before
+    # and is just here because of invalid / failed location
+    if 'start_location_message_invalid' in chat_data or 'start_location_geo_localization_failed' in chat_data:
+        return ask_for_location(update, context)
+
+    # ask if user wants to continue previous hunt or start a new hunt if hunt date is still the same / day didn't change
+    if 'hunt_date' in chat_data and chat_data['hunt_date'] == str(date.today()):
+
+        if query:
+            popup_text = get_text(lang, 'continue_hunt_question', format_str=False)
+            context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+
+        text += f"{get_text(lang, 'continue_hunt_detected')}\n\n" \
+                f"{get_text(lang, 'continue_hunt_question')}"
+
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('continue')} {get_text(lang, 'continue_hunt')}",
+                                          callback_data='continue_previous_hunt'),
+                     InlineKeyboardButton(text=f"{get_emoji('reset')} {get_text(lang, 'reset_hunt')}",
+                                          callback_data='reset_previous_hunt')],
+                    [InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
+                                          callback_data='overview')]]
+
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
+
+        return STEP0
+
+    return ask_for_location(update, context)
+
+
+@log_message
+def continue_previous_hunt(update: Update, context: CallbackContext):
+    """Continue the previous hunt"""
+    context.chat_data['hunt_continued'] = True
+    return ask_for_location(update, context)
+
+
+@log_message
+def reset_previous_hunt(update: Update, context: CallbackContext):
+    """Reset the previous hunt"""
+    context.chat_data['hunt_reset'] = True
+    clean_up_hunt(context.chat_data)
+    return ask_for_location(update, context)
+
+
+def ask_for_location(update: Update, context: CallbackContext):
+    """Ask the user for a location to start the hunt"""
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    query = update.callback_query
+
+    chat_data = context.chat_data
+
+    lang = get_language(chat_data)
+
+    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
+
     # set hunting flag
     chat_data['is_hunting'] = True
 
+    if 'hunt_continued' in chat_data:
+        del chat_data['hunt_continued']
+        text += f"{get_text(lang, 'hunt_continued')}\n\n"
+    elif 'hunt_reset' in chat_data:
+        del chat_data['hunt_reset']
+        text += f"{get_text(lang, 'hunt_reset')}\n\n"
+
     start_location_invalid = 'start_location_message_invalid'
     start_location_failed = 'start_location_geo_localization_failed'
-    if start_location_invalid in chat_data and chat_data[start_location_invalid]:
+    if start_location_invalid in chat_data:
         del chat_data[start_location_invalid]
         text += f"{get_emoji('warning')} *{get_text(lang, 'start_location_message_invalid')}*\n\n"
-    elif start_location_failed in chat_data and chat_data[start_location_failed]:
+    elif start_location_failed in chat_data:
         del chat_data[start_location_failed]
         text += f"{get_emoji('warning')} *{get_text(lang, 'start_location_geo_localization_failed')}*\n\n"
 
@@ -665,8 +734,6 @@ def set_start_location(update: Update, context: CallbackContext):
     context.job_queue.run_once(callback=job_delete_message,
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
-
-    clean_up_hunt(chat_data)
 
     quests_found = get_all_quests_in_range(chat_data,
                                            get_area_center_point(chat_data=chat_data),

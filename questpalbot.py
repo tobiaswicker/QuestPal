@@ -289,12 +289,17 @@ def main():
         entry_points=[CallbackQueryHandler(callback=conversation.start_hunt, pattern="^start_hunt")],
         states={
             # receive start location, send quest
-            conversation.STEP0: [MessageHandler(callback=conversation.set_start_location, filters=Filters.all)],
+            conversation.STEP0: [MessageHandler(callback=conversation.set_start_location, filters=Filters.all),
+                                 CallbackQueryHandler(callback=conversation.continue_previous_hunt,
+                                                      pattern="^continue_previous_hunt"),
+                                 CallbackQueryHandler(callback=conversation.reset_previous_hunt,
+                                                      pattern="^reset_previous_hunt")],
             conversation.STEP1: [CallbackQueryHandler(callback=conversation.quest_fetched, pattern="^quest_fetched"),
                                  CallbackQueryHandler(callback=conversation.quest_skip, pattern="^quest_skip"),
                                  CallbackQueryHandler(callback=conversation.quest_ignore, pattern="^quest_ignore"),
                                  CallbackQueryHandler(callback=conversation.end_hunt, pattern="^end_hunt"),
-                                 CallbackQueryHandler(callback=conversation.enqueue_skipped, pattern="^enqueue_skipped"),
+                                 CallbackQueryHandler(callback=conversation.enqueue_skipped,
+                                                      pattern="^enqueue_skipped"),
                                  CallbackQueryHandler(callback=conversation.continue_hunt, pattern="^continue_hunt")]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview')],

@@ -67,9 +67,9 @@ def get_text(language, key, format_str=True):
     elif key in _texts['en']:
 
         # construct bug report for devs
-        text = f"{get_emoji('bug')} *Bug Report*\n\n" \
-               f"No translation found for key `{key}` in `{language}`."
-        notify_devs(text=text)
+        report_text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+                      f"No translation found for key `{key}` in `{language}`."
+        notify_devs(text=report_text)
 
         if format_str:
             return _texts['en'][key]
@@ -77,9 +77,9 @@ def get_text(language, key, format_str=True):
             return remove_format(_texts['en'][key])
 
     # construct bug report for devs
-    text = f"{get_emoji('bug')} *Bug Report*\n\n" \
-           f"Could not find text for key `{key}` in `{language}`."
-    notify_devs(text=text)
+    report_text = f"{get_emoji('bug')} *Bug Report*\n\n" \
+                  f"Could not find text for key `{key}` in `{language}`."
+    notify_devs(text=report_text)
 
     # no translation available
     return "Text not found."
@@ -100,6 +100,8 @@ def get_emoji(emoji):
         "item": "🍇",
         "task": "🔖",
         "hunt": "🎯️",
+        "continue": "➡️",
+        "reset": "🔄",
         "defer": "⏱",
         "enqueue": "📤",
         "finish": "🏁",
