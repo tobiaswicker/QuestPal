@@ -117,7 +117,7 @@ def get_emoji(emoji):
         "thumb_up": "👍",
         "thumb_down": "👎",
         "privacy": "👁",
-        "tos": "📜",
+        "tos": "📃",
         "contact": "💬",
         "add": "➕",
         "bug": "👻",

@@ -88,7 +88,7 @@
 	"skip": "Skip",
 	"not_implemented": "This option is not implemented yet.",
 	"info": "Info",
-	"info_0": "Here you can find information on *Privacy Policy*, the *Terms of Service* and how you can get in *Contact*.",
+	"info_0": "Here you can find information on the *Privacy Policy*, the *Terms of Service* and how you can get in *Contact*.",
 	"privacy": "Privacy Policy",
 	"privacy_text_0": "@{bot} stores the following information about you:",
 	"privacy_text_0_0": "- your telegram user id,",
