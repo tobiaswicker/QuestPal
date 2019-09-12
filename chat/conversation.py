@@ -899,6 +899,7 @@ def send_next_quest(update: Update, context: CallbackContext):
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data='overview')]]
 
+        # inform user that all quests have been completed
         message_user(bot=context.bot,
                      chat_id=chat_id,
                      chat_data=chat_data,
@@ -906,6 +907,12 @@ def send_next_quest(update: Update, context: CallbackContext):
                      payload=text,
                      keyboard=keyboard,
                      category=MessageCategory.main)
+
+        # remove location message
+        delete_message_in_category(bot=context.bot,
+                                   chat_id=chat_id,
+                                   chat_data=chat_data,
+                                   category=MessageCategory.location)
 
         if 'is_hunting' in chat_data:
             del chat_data['is_hunting']
