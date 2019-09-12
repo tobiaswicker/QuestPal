@@ -962,14 +962,13 @@ def send_next_quest(update: Update, context: CallbackContext):
 
     keyboard = [row]
 
-    row = [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
-                                callback_data='end_hunt')]
-
     if 'skipped_quests' in chat_data:
-        row.append(InlineKeyboardButton(text=f"{get_emoji('enqueue')} {get_text(lang, 'quests_enqueue_skipped')}",
-                                        callback_data='enqueue_skipped'))
+        text = f"{get_emoji('enqueue')} {get_text(lang, 'quests_enqueue_skipped')} ({len(skipped_quests)})"
+        keyboard.append([InlineKeyboardButton(text=text,
+                                              callback_data='enqueue_skipped')])
 
-    keyboard.append(row)
+    keyboard.append([InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
+                                          callback_data='end_hunt')])
 
     message_user(bot=context.bot,
                  chat_id=chat_id,
