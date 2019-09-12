@@ -860,12 +860,18 @@ def send_next_quest(update: Update, context: CallbackContext):
                          keyboard=[],
                          category=MessageCategory.main)
 
-            keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
-                                              callback_data=f'quest_fetched {closest_stop_id}'),
-                         InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
-                                              callback_data=f'quest_skip {closest_stop_id}'),
-                         InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
-                                              callback_data=f'quest_ignore {closest_stop_id}')],
+            row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
+                                        callback_data=f'quest_fetched {closest_stop_id}')]
+
+            # only show skip button if more then one quests remain
+            if len(skipped_quests) > 1:
+                row.append(InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
+                                                callback_data=f'quest_skip {closest_stop_id}'))
+
+            row.append(InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
+                                            callback_data=f'quest_ignore {closest_stop_id}'))
+
+            keyboard = [row,
                         [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                               callback_data='end_hunt')]]
 
@@ -930,12 +936,16 @@ def send_next_quest(update: Update, context: CallbackContext):
                  keyboard=[],
                  category=MessageCategory.main)
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
-                                      callback_data=f'quest_fetched {closest_stop_id}'),
-                 InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
-                                      callback_data=f'quest_skip {closest_stop_id}'),
-                 InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
-                                      callback_data=f'quest_ignore {closest_stop_id}')]]
+    row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
+                                callback_data=f'quest_fetched {closest_stop_id}')]
+
+    if quests_found > 1 and not skipped_quests:
+        row.append(InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
+                                        callback_data=f'quest_skip {closest_stop_id}'))
+    row.append(InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
+                                    callback_data=f'quest_ignore {closest_stop_id}'))
+
+    keyboard = [row]
 
     row = [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                 callback_data='end_hunt')]
