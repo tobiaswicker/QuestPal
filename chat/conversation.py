@@ -593,7 +593,45 @@ def start_hunt(update: Update, context: CallbackContext):
 
         return ConversationHandler.END
 
-    # skip asking for hund continuation / reset if the user has seen this question before
+    quests_found = get_all_quests_in_range(chat_data,
+                                           get_area_center_point(chat_data=chat_data),
+                                           get_area_radius(chat_data=chat_data))
+
+    # make sure there are quests to hunt
+    if not quests_found:
+        if query:
+            popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_quests_found')}"
+            context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=True)
+
+        text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
+               f"{get_emoji('warning')} {get_text(lang, 'no_quests_found')}\n" \
+               f"{get_text(lang, 'no_quests_found_extended_info0')}\n" \
+               f"{get_text(lang, 'no_quests_found_extended_info1')}\n\n" \
+               f"{get_text(lang, 'no_quests_found_quest_count').format(total_quests_count=len(quests))}\n\n"
+
+        if quest_map_url:
+            text += get_text(lang, 'no_quests_found_map_hint').format(quest_map_url=quest_map_url)
+
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
+                                          callback_data='overview')]]
+
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
+
+        if 'is_hunting' in chat_data:
+            del chat_data['is_hunting']
+
+        return ConversationHandler.END
+
+    # skip asking for hunt continuation / reset if the user has seen this question before
     # and is just here because of invalid / failed location
     if 'start_location_message_invalid' in chat_data or 'start_location_geo_localization_failed' in chat_data:
         return ask_for_location(update, context)
@@ -701,8 +739,6 @@ def set_start_location(update: Update, context: CallbackContext):
 
     chat_data = context.chat_data
 
-    lang = get_language(chat_data)
-
     message = update.effective_message
 
     # check for location
@@ -737,39 +773,6 @@ def set_start_location(update: Update, context: CallbackContext):
     context.job_queue.run_once(callback=job_delete_message,
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
-
-    quests_found = get_all_quests_in_range(chat_data,
-                                           get_area_center_point(chat_data=chat_data),
-                                           get_area_radius(chat_data=chat_data))
-
-    if not quests_found:
-        text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
-               f"{get_emoji('warning')} {get_text(lang, 'no_quests_found')}\n" \
-               f"{get_text(lang, 'no_quests_found_extended_info0')}\n" \
-               f"{get_text(lang, 'no_quests_found_extended_info1')}\n\n" \
-               f"{get_text(lang, 'no_quests_found_quest_count').format(total_quests_count=len(quests))}\n\n"
-
-        if quest_map_url:
-            text += get_text(lang, 'no_quests_found_map_hint').format(quest_map_url=quest_map_url)
-
-        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
-                                          callback_data='overview')]]
-
-        # delete main message so new main message appears beneath user input
-        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
-
-        message_user(bot=context.bot,
-                     chat_id=chat_id,
-                     chat_data=chat_data,
-                     message_type=MessageType.message,
-                     payload=text,
-                     keyboard=keyboard,
-                     category=MessageCategory.main)
-
-        if 'is_hunting' in chat_data:
-            del chat_data['is_hunting']
-
-        return ConversationHandler.END
 
     # delete main message so new main message appears beneath user input
     delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
