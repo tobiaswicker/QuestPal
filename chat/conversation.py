@@ -1,6 +1,7 @@
 import logging
 import re
 
+from datetime import date
 from geopy.geocoders import Nominatim
 
 from telegram import Update, InlineKeyboardButton
@@ -665,11 +666,7 @@ def set_start_location(update: Update, context: CallbackContext):
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
 
-    # clean up previous quest hunt
-    if 'fetched_quests' in chat_data:
-        del chat_data['fetched_quests']
-    if 'skipped_quests' in chat_data:
-        del chat_data['skipped_quests']
+    clean_up_hunt(chat_data)
 
     quests_found = get_all_quests_in_range(chat_data,
                                            get_area_center_point(chat_data=chat_data),
@@ -710,6 +707,16 @@ def set_start_location(update: Update, context: CallbackContext):
     return send_next_quest(update, context)
 
 
+def clean_up_hunt(chat_data):
+    """Clean up previous quest hunt"""
+    if 'fetched_quests' in chat_data:
+        del chat_data['fetched_quests']
+    if 'skipped_quests' in chat_data:
+        del chat_data['skipped_quests']
+    if 'ignored_quests' in chat_data:
+        del chat_data['ignored_quests']
+
+
 def send_next_quest(update: Update, context: CallbackContext):
     """Send the next quest in line"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
@@ -724,6 +731,15 @@ def send_next_quest(update: Update, context: CallbackContext):
     quests_found = get_all_quests_in_range(chat_data,
                                            get_area_center_point(chat_data=chat_data),
                                            get_area_radius(chat_data=chat_data))
+
+    today = str(date.today())
+
+    # clean up hunt if hunt date does not match / it's a new day
+    if 'hunt_date' in chat_data and chat_data['hunt_date'] != today:
+        clean_up_hunt(chat_data)
+
+    # remember today's date
+    chat_data['hunt_date'] = today
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
