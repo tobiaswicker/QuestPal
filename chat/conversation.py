@@ -340,6 +340,8 @@ def choose_pokemon(update: Update, context: CallbackContext):
 
     keyboard = []
     row = []
+
+    # list all pokemon that are available as well as those not available but previously chosen
     for pokemon_id in sorted(quest_pokemon_list + list(set(chosen_pokemon) - set(quest_pokemon_list))):
         if 'pokemon' in chat_data and pokemon_id in chat_data['pokemon']:
             button_text = f"{get_emoji('checked')} "
@@ -421,6 +423,7 @@ def choose_item(update: Update, context: CallbackContext):
 
     keyboard = []
     row = []
+    # list all items that are available as well as those not available but previously chosen
     for item_id in sorted(quest_items_list + list(set(chosen_items) - set(quest_items_list))):
         if 'items' in chat_data and item_id in chat_data['items']:
             button_text = f"{get_emoji('checked')} {get_item(lang, item_id)}"
@@ -504,19 +507,13 @@ def choose_task(update: Update, context: CallbackContext):
                 text += f"- {task}\n"
 
     keyboard = []
-    row = []
     for task in all_tasks:
         task_id = get_id_by_task(lang, task)
         if 'tasks' in chat_data and task_id in chat_data['tasks']:
             button_text = f"{get_emoji('checked')} {task}"
         else:
             button_text = task
-        row.append(InlineKeyboardButton(text=button_text, callback_data=f'choose_task {task_id}'[:61]))
-        if len(row) == 1:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
+        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f'choose_task {task_id}'[:61])])
 
     keyboard.append([InlineKeyboardButton(text=f"{get_emoji('back')} {get_text(lang, 'back')}",
                                           callback_data='choose_quest_type'),
