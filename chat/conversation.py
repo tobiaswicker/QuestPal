@@ -666,10 +666,10 @@ def set_start_location(update: Update, context: CallbackContext):
                                when=5)
 
     # clean up previous quest hunt
-    if 'done_quests' in chat_data:
-        del chat_data['done_quests']
-    if 'deferred_quests' in chat_data:
-        del chat_data['deferred_quests']
+    if 'fetched_quests' in chat_data:
+        del chat_data['fetched_quests']
+    if 'skipped_quests' in chat_data:
+        del chat_data['skipped_quests']
 
     quests_found = get_all_quests_in_range(chat_data,
                                            get_area_center_point(chat_data=chat_data),
@@ -726,32 +726,38 @@ def send_next_quest(update: Update, context: CallbackContext):
                                            get_area_radius(chat_data=chat_data))
 
     # remove all finished quests
-    if 'done_quests' in chat_data:
-        for stop_id in chat_data['done_quests']:
+    if 'fetched_quests' in chat_data:
+        for stop_id in chat_data['fetched_quests']:
             if stop_id in quests_found:
                 del quests_found[stop_id]
 
-    deferred_quests = {}
-    # remove all deferred quests and treat them differently
-    if 'deferred_quests' in chat_data:
-        for stop_id in chat_data['deferred_quests']:
+    # remove all ignored quests
+    if 'ignored_quests' in chat_data:
+        for stop_id in chat_data['ignored_quests']:
             if stop_id in quests_found:
-                deferred_quests[stop_id] = quests_found[stop_id]
+                del quests_found[stop_id]
+
+    skipped_quests = {}
+    # remove all skipped quests and treat them differently
+    if 'skipped_quests' in chat_data:
+        for stop_id in chat_data['skipped_quests']:
+            if stop_id in quests_found:
+                skipped_quests[stop_id] = quests_found[stop_id]
                 del quests_found[stop_id]
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
     # make sure there are quests remaining
     if not quests_found:
-        # check for deferred quests
-        if deferred_quests:
-            (closest_distance, closest_stop_id) = get_closest_quest(deferred_quests, chat_data['user_location'])
-            current_quest = deferred_quests[closest_stop_id]
+        # check for skipped quests
+        if skipped_quests:
+            (closest_distance, closest_stop_id) = get_closest_quest(skipped_quests, chat_data['user_location'])
+            current_quest = skipped_quests[closest_stop_id]
 
-            popup_text = get_text(lang, 'hunt_quest_count_deferred', format_str=False) \
-                .format(deferred=len(deferred_quests))
+            popup_text = get_text(lang, 'hunt_quest_count_skipped', format_str=False) \
+                .format(skipped=len(skipped_quests))
 
-            text += f"{get_text(lang, 'hunt_quest_count_deferred').format(deferred=len(deferred_quests))}\n\n" \
+            text += f"{get_text(lang, 'hunt_quest_count_skipped').format(skipped=len(skipped_quests))}\n\n" \
                     f"{get_quest_summary(chat_data, current_quest, closest_distance)}"
 
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
@@ -764,8 +770,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                          keyboard=[],
                          category=MessageCategory.main)
 
-            keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
-                                              callback_data=f'quest_done {closest_stop_id}')],
+            keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
+                                              callback_data=f'quest_fetched {closest_stop_id}')],
                         [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                               callback_data='end_hunt')]]
 
@@ -787,7 +793,7 @@ def send_next_quest(update: Update, context: CallbackContext):
         context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
-                                          callback_data=f'overview')]]
+                                          callback_data='overview')]]
 
         message_user(bot=context.bot,
                      chat_id=chat_id,
@@ -805,11 +811,11 @@ def send_next_quest(update: Update, context: CallbackContext):
     (closest_distance, closest_stop_id) = get_closest_quest(quests_found, chat_data['user_location'])
     current_quest = quests_found[closest_stop_id]
 
-    if deferred_quests:
-        popup_text = get_text(lang, 'hunt_quest_count_open_and_deferred', format_str=False) \
-            .format(open=len(quests_found), deferred=len(deferred_quests))
-        text += get_text(lang, 'hunt_quest_count_open_and_deferred').format(open=len(quests_found),
-                                                                            deferred=len(deferred_quests))
+    if skipped_quests:
+        popup_text = get_text(lang, 'hunt_quest_count_open_and_skipped', format_str=False) \
+            .format(open=len(quests_found), skipped=len(skipped_quests))
+        text += get_text(lang, 'hunt_quest_count_open_and_skipped').format(open=len(quests_found),
+                                                                           skipped=len(skipped_quests))
     else:
         popup_text = get_text(lang, 'hunt_quest_count_open', format_str=False).format(open=len(quests_found))
         text += get_text(lang, 'hunt_quest_count_open').format(open=len(quests_found))
@@ -829,10 +835,12 @@ def send_next_quest(update: Update, context: CallbackContext):
                  keyboard=[],
                  category=MessageCategory.main)
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_done')}",
-                                      callback_data=f'quest_done {closest_stop_id}'),
-                 InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'defer_quest')}",
-                                      callback_data=f'defer_quest {closest_stop_id}')],
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
+                                      callback_data=f'quest_fetched {closest_stop_id}'),
+                 InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
+                                      callback_data=f'quest_skip {closest_stop_id}'),
+                 InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
+                                      callback_data=f'quest_ignore {closest_stop_id}')],
                 [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                       callback_data='end_hunt')]]
 
@@ -865,17 +873,17 @@ def get_quest_summary(chat_data, quest: Quest, closest_distance):
 
 
 @log_message
-def quest_done(update: Update, context: CallbackContext):
-    """Mark a quest as done / hunted"""
+def quest_fetched(update: Update, context: CallbackContext):
+    """Mark a quest as done / fetched"""
     params = update.callback_query.data.split()
     stop_id = params[1]
 
     chat_data = context.chat_data
 
-    if 'done_quests' not in chat_data:
-        chat_data['done_quests'] = [stop_id]
+    if 'fetched_quests' not in chat_data:
+        chat_data['fetched_quests'] = [stop_id]
     else:
-        chat_data['done_quests'].append(stop_id)
+        chat_data['fetched_quests'].append(stop_id)
 
     # get all quests for chat
     quests_found = get_all_quests_in_range(chat_data,
@@ -890,19 +898,75 @@ def quest_done(update: Update, context: CallbackContext):
 
 
 @log_message
-def defer_quest(update: Update, context: CallbackContext):
-    """Defer a quest"""
+def quest_skip(update: Update, context: CallbackContext):
+    """Skip a quest"""
     params = update.callback_query.data.split()
     stop_id = params[1]
 
     chat_data = context.chat_data
 
-    if 'deferred_quests' not in chat_data:
-        chat_data['deferred_quests'] = [stop_id]
+    if 'skipped_quests' not in chat_data:
+        chat_data['skipped_quests'] = [stop_id]
     else:
-        chat_data['deferred_quests'].append(stop_id)
+        chat_data['skipped_quests'].append(stop_id)
 
     return send_next_quest(update, context)
+
+
+@log_message
+def quest_ignore(update: Update, context: CallbackContext):
+    """Ignore a quest"""
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    chat_data = context.chat_data
+
+    lang = get_language(chat_data)
+
+    query = update.callback_query
+    params = query.data.split()
+
+    if params[1] == "yes":
+
+        stop_id = params[2]
+
+        if 'ignored_quests' not in chat_data:
+            chat_data['ignored_quests'] = [stop_id]
+        else:
+            chat_data['ignored_quests'].append(stop_id)
+
+        return send_next_quest(update, context)
+
+    stop_id = params[1]
+
+    popup_text = get_text(lang, 'hunt_quest_ignore_confirm', format_str=False)
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+
+    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
+           f"{get_text(lang, 'hunt_quest_ignore_info')}\n\n" \
+           f"{get_text(lang, 'hunt_quest_ignore_confirm')}"
+
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('thumb_up')} {get_text(lang, 'yes')}",
+                                      callback_data=f'quest_ignore yes {stop_id}'),
+                 InlineKeyboardButton(text=f"{get_emoji('thumb_down')} {get_text(lang, 'no')}",
+                                      callback_data='continue_hunt')]]
+
+    # update main message
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
+    # delete location message
+    delete_message_in_category(bot=context.bot,
+                               chat_id=chat_id,
+                               chat_data=chat_data,
+                               category=MessageCategory.location)
+
+    return STEP1
 
 
 @log_message
@@ -925,7 +989,7 @@ def end_hunt(update: Update, context: CallbackContext):
         text += get_text(lang, 'hunt_quest_finished_early', )
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
-                                          callback_data=f'overview')]]
+                                          callback_data='overview')]]
 
         if 'is_hunting' in chat_data:
             del chat_data['is_hunting']
@@ -939,9 +1003,9 @@ def end_hunt(update: Update, context: CallbackContext):
         text += get_text(lang, 'hunt_quest_finish_confirm', )
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('thumb_up')} {get_text(lang, 'yes')}",
-                                          callback_data=f'end_hunt yes'),
+                                          callback_data='end_hunt yes'),
                      InlineKeyboardButton(text=f"{get_emoji('thumb_down')} {get_text(lang, 'no')}",
-                                          callback_data=f'continue_hunt')]]
+                                          callback_data='continue_hunt')]]
 
         return_value = STEP1
 
