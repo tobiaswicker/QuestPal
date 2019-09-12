@@ -243,30 +243,25 @@ def main():
     dp.add_handler(CallbackQueryHandler(callback=chat.start, pattern='^overview'))
 
     # settings
-    dp.add_handler(CallbackQueryHandler(chat.settings, pattern='^settings'))
+    dp.add_handler(CallbackQueryHandler(callback=chat.settings, pattern='^settings'))
 
     # info section
-    dp.add_handler(CallbackQueryHandler(chat.info, pattern='^info'))
+    dp.add_handler(CallbackQueryHandler(callback=chat.info, pattern='^info'))
 
     # delete data
-    dp.add_handler(CallbackQueryHandler(chat.delete_data, pattern='^delete_data'))
+    dp.add_handler(CallbackQueryHandler(callback=chat.delete_data, pattern='^delete_data'))
 
     # select area conversation
     conversation_handler_select_area = ConversationHandler(
-        entry_points=[CallbackQueryHandler(callback=conversation.select_area,
-                                           pattern='^select_area$', pass_user_data=True)],
+        entry_points=[CallbackQueryHandler(callback=conversation.select_area, pattern='^select_area$')],
         states={
             # receive location, ask for radius
-            conversation.STEP0: [MessageHandler(callback=conversation.set_quest_center_point,
-                                                filters=Filters.all,
-                                                pass_user_data=True)],
+            conversation.STEP0: [MessageHandler(callback=conversation.set_quest_center_point, filters=Filters.all)],
             # receive radius
-            conversation.STEP1: [MessageHandler(callback=conversation.set_quest_radius,
-                                                filters=Filters.all,
-                                                pass_user_data=True)]
+            conversation.STEP1: [MessageHandler(callback=conversation.set_quest_radius, filters=Filters.all)]
         },
         # fallback to overview
-        fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
+        fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview')],
         allow_reentry=True,
         persistent=True,
         name="select_area"
@@ -275,20 +270,12 @@ def main():
 
     # choose quest conversation
     conversation_handler_choose_quest = ConversationHandler(
-        entry_points=[CallbackQueryHandler(callback=conversation.choose_quest_type,
-                                           pattern="^choose_quest_type$",
-                                           pass_user_data=True)],
+        entry_points=[CallbackQueryHandler(callback=conversation.choose_quest_type, pattern="^choose_quest_type$")],
         states={
             # receive quest type, ask for quest
-            conversation.STEP0: [CallbackQueryHandler(callback=conversation.choose_pokemon,
-                                                      pattern="^choose_pokemon",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.choose_item,
-                                                      pattern="^choose_item",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.choose_task,
-                                                      pattern="^choose_task",
-                                                      pass_user_data=True)]
+            conversation.STEP0: [CallbackQueryHandler(callback=conversation.choose_pokemon, pattern="^choose_pokemon"),
+                                 CallbackQueryHandler(callback=conversation.choose_item, pattern="^choose_item"),
+                                 CallbackQueryHandler(callback=conversation.choose_task, pattern="^choose_task")]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
         allow_reentry=True,
@@ -299,34 +286,18 @@ def main():
 
     # hunt quest conversation
     conversation_handler_start_hunt = ConversationHandler(
-        entry_points=[CallbackQueryHandler(callback=conversation.start_hunt,
-                                           pattern="^start_hunt",
-                                           pass_user_data=True)],
+        entry_points=[CallbackQueryHandler(callback=conversation.start_hunt, pattern="^start_hunt")],
         states={
             # receive start location, send quest
-            conversation.STEP0: [MessageHandler(callback=conversation.set_start_location,
-                                                filters=Filters.all,
-                                                pass_user_data=True)],
-            conversation.STEP1: [CallbackQueryHandler(callback=conversation.quest_fetched,
-                                                      pattern="^quest_fetched",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.quest_skip,
-                                                      pattern="^quest_skip",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.quest_ignore,
-                                                      pattern="^quest_ignore",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.end_hunt,
-                                                      pattern="^end_hunt",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.enqueue_skipped,
-                                                      pattern="^enqueue_skipped",
-                                                      pass_user_data=True),
-                                 CallbackQueryHandler(callback=conversation.continue_hunt,
-                                                      pattern="^continue_hunt",
-                                                      pass_user_data=True)]
+            conversation.STEP0: [MessageHandler(callback=conversation.set_start_location, filters=Filters.all)],
+            conversation.STEP1: [CallbackQueryHandler(callback=conversation.quest_fetched, pattern="^quest_fetched"),
+                                 CallbackQueryHandler(callback=conversation.quest_skip, pattern="^quest_skip"),
+                                 CallbackQueryHandler(callback=conversation.quest_ignore, pattern="^quest_ignore"),
+                                 CallbackQueryHandler(callback=conversation.end_hunt, pattern="^end_hunt"),
+                                 CallbackQueryHandler(callback=conversation.enqueue_skipped, pattern="^enqueue_skipped"),
+                                 CallbackQueryHandler(callback=conversation.continue_hunt, pattern="^continue_hunt")]
         },
-        fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview', pass_user_data=True)],
+        fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview')],
         allow_reentry=True,
         persistent=True,
         name="start_hunt"
