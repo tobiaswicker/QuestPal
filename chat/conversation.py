@@ -310,6 +310,7 @@ def choose_pokemon(update: Update, context: CallbackContext):
 
     text = f"{get_emoji('pokemon')} *{get_text(lang, 'add_pokemon')}*\n\n" \
            f"{get_text(lang, 'add_pokemon_text0')}\n\n"
+
     # user chose a pokemon
     if len(params) == 2:
 
@@ -340,12 +341,14 @@ def choose_pokemon(update: Update, context: CallbackContext):
     keyboard = []
     row = []
     for pokemon_id in sorted(quest_pokemon_list + list(set(chosen_pokemon) - set(quest_pokemon_list))):
-        if pokemon_id in shiny_pokemon_list:
-            button_text = f"{get_emoji('shiny')} {get_pokemon(lang, pokemon_id)}"
-        else:
-            button_text = get_pokemon(lang, pokemon_id)
         if 'pokemon' in chat_data and pokemon_id in chat_data['pokemon']:
-            button_text += f" {get_emoji('checked')}"
+            button_text = f"{get_emoji('checked')} "
+        else:
+            button_text = ""
+        if pokemon_id in shiny_pokemon_list:
+            button_text += f"{get_pokemon(lang, pokemon_id)} {get_emoji('shiny')}"
+        else:
+            button_text += get_pokemon(lang, pokemon_id)
 
         row.append(InlineKeyboardButton(text=button_text, callback_data=f'choose_pokemon {pokemon_id}'))
 
@@ -420,7 +423,7 @@ def choose_item(update: Update, context: CallbackContext):
     row = []
     for item_id in sorted(quest_items_list + list(set(chosen_items) - set(quest_items_list))):
         if 'items' in chat_data and item_id in chat_data['items']:
-            button_text = f"{get_item(lang, item_id)} {get_emoji('checked')}"
+            button_text = f"{get_emoji('checked')} {get_item(lang, item_id)}"
         else:
             button_text = get_item(lang, item_id)
 
@@ -505,7 +508,7 @@ def choose_task(update: Update, context: CallbackContext):
     for task in all_tasks:
         task_id = get_id_by_task(lang, task)
         if 'tasks' in chat_data and task_id in chat_data['tasks']:
-            button_text = f"{task} {get_emoji('checked')}"
+            button_text = f"{get_emoji('checked')} {task}"
         else:
             button_text = task
         row.append(InlineKeyboardButton(text=button_text, callback_data=f'choose_task {task_id}'[:61]))
