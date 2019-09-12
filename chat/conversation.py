@@ -785,6 +785,8 @@ def clean_up_hunt(chat_data):
         del chat_data['skipped_quests']
     if 'ignored_quests' in chat_data:
         del chat_data['ignored_quests']
+    if 'hunt_date' in chat_data:
+        del chat_data['hunt_date']
 
 
 def send_next_quest(update: Update, context: CallbackContext):
