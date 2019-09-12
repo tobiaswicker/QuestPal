@@ -319,6 +319,9 @@ def main():
                                  CallbackQueryHandler(callback=conversation.end_hunt,
                                                       pattern="^end_hunt",
                                                       pass_user_data=True),
+                                 CallbackQueryHandler(callback=conversation.enqueue_skipped,
+                                                      pattern="^enqueue_skipped",
+                                                      pass_user_data=True),
                                  CallbackQueryHandler(callback=conversation.continue_hunt,
                                                       pattern="^continue_hunt",
                                                       pass_user_data=True)]

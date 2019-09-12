@@ -725,15 +725,18 @@ def send_next_quest(update: Update, context: CallbackContext):
                                            get_area_center_point(chat_data=chat_data),
                                            get_area_radius(chat_data=chat_data))
 
+    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
+
+    if 'enqueue_skipped' in chat_data:
+        del chat_data['enqueue_skipped']
+        if 'skipped_quests' in chat_data:
+            text += get_text(lang, 'hunt_quest_enqueued_skipped').format(skipped=len(chat_data['skipped_quests']))
+            text += "\n\n"
+            del chat_data['skipped_quests']
+
     # remove all finished quests
     if 'fetched_quests' in chat_data:
         for stop_id in chat_data['fetched_quests']:
-            if stop_id in quests_found:
-                del quests_found[stop_id]
-
-    # remove all ignored quests
-    if 'ignored_quests' in chat_data:
-        for stop_id in chat_data['ignored_quests']:
             if stop_id in quests_found:
                 del quests_found[stop_id]
 
@@ -745,7 +748,11 @@ def send_next_quest(update: Update, context: CallbackContext):
                 skipped_quests[stop_id] = quests_found[stop_id]
                 del quests_found[stop_id]
 
-    text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
+    # remove all ignored quests
+    if 'ignored_quests' in chat_data:
+        for stop_id in chat_data['ignored_quests']:
+            if stop_id in quests_found:
+                del quests_found[stop_id]
 
     # make sure there are quests remaining
     if not quests_found:
@@ -844,9 +851,16 @@ def send_next_quest(update: Update, context: CallbackContext):
                  InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
                                       callback_data=f'quest_skip {closest_stop_id}'),
                  InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
-                                      callback_data=f'quest_ignore {closest_stop_id}')],
-                [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
-                                      callback_data='end_hunt')]]
+                                      callback_data=f'quest_ignore {closest_stop_id}')]]
+
+    row = [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
+                                callback_data='end_hunt')]
+
+    if 'skipped_quests' in chat_data:
+        row.append(InlineKeyboardButton(text=f"{get_emoji('enqueue')} {get_text(lang, 'quests_enqueue_skipped')}",
+                                        callback_data='enqueue_skipped'))
+
+    keyboard.append(row)
 
     message_user(bot=context.bot,
                  chat_id=chat_id,
@@ -971,6 +985,15 @@ def quest_ignore(update: Update, context: CallbackContext):
                                category=MessageCategory.location)
 
     return STEP1
+
+
+@log_message
+def enqueue_skipped(update: Update, context: CallbackContext):
+    """Ignore a quest"""
+
+    context.chat_data['enqueue_skipped'] = True
+
+    return send_next_quest(update, context)
 
 
 @log_message

@@ -95,6 +95,7 @@ def get_emoji(emoji):
         "task": "🔖",
         "hunt": "🎯️",
         "defer": "⏱",
+        "enqueue": "📤",
         "finish": "🏁",
         "congratulation": "🏆",
         "settings": "⚙️",
