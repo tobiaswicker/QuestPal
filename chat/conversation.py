@@ -884,7 +884,8 @@ def send_next_quest(update: Update, context: CallbackContext):
         text += f"{get_emoji('congratulation')} {get_text(lang, 'hunt_quest_all_done')}\n\n" \
                 f"{get_text(lang, 'hunt_quest_new_quests_tomorrow')}"
 
-        context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+        if query:
+            context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data='overview')]]
