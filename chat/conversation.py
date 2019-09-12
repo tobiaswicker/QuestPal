@@ -259,17 +259,17 @@ def choose_quest_type(update: Update, context: CallbackContext):
                     f"*{get_text(lang, 'pokemon')}*\n"
             for pokemon_id in pokemon:
                 shiny_tag = f" {get_emoji('shiny')}" if pokemon_id in shiny_pokemon_list else ""
-                text += f"- {get_pokemon(lang, pokemon_id)}{shiny_tag}\n"
+                text += f"- `{get_pokemon(lang, pokemon_id)}`{shiny_tag}\n"
         if items:
             text += f"\n" \
                     f"*{get_text(lang, 'items')}*\n"
             for item_id in items:
-                text += f"- {get_item(lang, item_id)}\n"
+                text += f"- `{get_item(lang, item_id)}`\n"
         if tasks:
             text += f"\n" \
                     f"*{get_text(lang, 'tasks')}*\n"
             for task_id in tasks:
-                text += f"- {get_task_by_id(lang, task_id)}\n"
+                text += f"- `{get_task_by_id(lang, task_id)}`\n"
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('pokemon')} {get_text(lang, 'add_pokemon')}",
                                       callback_data='choose_pokemon'),
@@ -334,7 +334,7 @@ def choose_pokemon(update: Update, context: CallbackContext):
         chat_data['pokemon'].sort()
         for pokemon_id in chat_data['pokemon']:
             shiny_tag = f" {get_emoji('shiny')}" if pokemon_id in shiny_pokemon_list else ""
-            text += f"- {get_pokemon(lang, pokemon_id)}{shiny_tag}\n"
+            text += f"- `{get_pokemon(lang, pokemon_id)}`{shiny_tag}\n"
 
         chosen_pokemon = chat_data['pokemon']
 
@@ -417,7 +417,7 @@ def choose_item(update: Update, context: CallbackContext):
 
         chat_data['items'].sort()
         for item_id in chat_data['items']:
-            text += f"- {get_item(lang, item_id)}\n"
+            text += f"- `{get_item(lang, item_id)}`\n"
 
         chosen_items = chat_data['items']
 
@@ -498,22 +498,33 @@ def choose_task(update: Update, context: CallbackContext):
         for task_id in chat_data['tasks']:
             task = get_task_by_id(lang, task_id)
             if task not in all_tasks:
-                all_tasks.append(task)
+                all_tasks = all_tasks + [task]
 
         all_tasks.sort()
 
         for task in all_tasks:
-            if get_id_by_task(lang, task) in chat_data['tasks']:
-                text += f"- {task}\n"
+            task_id = get_id_by_task(lang, task)
+            if task_id in chat_data['tasks'] or task_id == 'UNKNOWN_TASK':
+                text += f"- `{task}`\n"
 
     keyboard = []
+    # iterate all tasks including those chosen by the user
     for task in all_tasks:
         task_id = get_id_by_task(lang, task)
+        # check if task has been chosen
         if 'tasks' in chat_data and task_id in chat_data['tasks']:
             button_text = f"{get_emoji('checked')} {task}"
+            button_cmd = task_id
+        # check if task is no longer known but was selected
+        elif task_id == 'UNKNOWN_TASK' and 'tasks' in chat_data and task in chat_data['tasks']:
+            button_text = f"{get_emoji('checked')} {task}"
+            button_cmd = task
+        # task hasn't been selected
         else:
             button_text = task
-        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f'choose_task {task_id}'[:61])])
+            button_cmd = task_id
+
+        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f'choose_task {button_cmd}'[:61])])
 
     keyboard.append([InlineKeyboardButton(text=f"{get_emoji('back')} {get_text(lang, 'back')}",
                                           callback_data='choose_quest_type'),
