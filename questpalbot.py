@@ -258,7 +258,11 @@ def main():
             # receive location, ask for radius
             conversation.STEP0: [MessageHandler(callback=conversation.set_quest_center_point, filters=Filters.all)],
             # receive radius
-            conversation.STEP1: [MessageHandler(callback=conversation.set_quest_radius, filters=Filters.all)]
+            conversation.STEP1: [MessageHandler(callback=conversation.set_quest_radius, filters=Filters.all)],
+            # receive button click, ask for location or radius
+            conversation.STEP2: [CallbackQueryHandler(callback=conversation.change_center_point,
+                                                      pattern='^change_center_point'),
+                                 CallbackQueryHandler(callback=conversation.change_radius, pattern='^change_radius')],
         },
         # fallback to overview
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview')],

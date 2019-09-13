@@ -27,7 +27,7 @@ STEP0, STEP1, STEP2, STEP3, STEP4, STEP5, STEP6, STEP7, STEP8 = range(9)
 
 @log_message
 def select_area(update: Update, context: CallbackContext):
-    """Let the user select the area for quest hunting"""
+    """Show a menu to the user that allows to select an area for quest hunting"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     query = update.callback_query
@@ -39,25 +39,13 @@ def select_area(update: Update, context: CallbackContext):
     popup_text = get_text(lang, 'select_area_text0', format_str=False)
 
     text = f"{get_emoji('area')} *{get_text(lang, 'select_area')}*\n\n"
-
-    center_point_invalid = 'area_center_point_message_invalid'
-    center_point_failed = 'area_center_point_geo_localization_failed'
-    if center_point_invalid in chat_data and chat_data[center_point_invalid]:
-        del chat_data[center_point_invalid]
-        text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_message_invalid')}*\n\n"
-        # delete main message so new main message appears beneath user input
-        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
-    elif center_point_failed in chat_data and chat_data[center_point_failed]:
-        del chat_data[center_point_failed]
-        text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_geo_localization_failed')}*\n\n"
-        # delete main message so new main message appears beneath user input
-        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
-
     text += f"{get_text(lang, 'select_area_text0')}\n\n"
 
-    center_point = get_area_center_point(chat_data=chat_data)
-    radius = get_area_radius(chat_data=chat_data)
-    if center_point[0] and center_point[1] and radius:
+    # show info about current area if area is set
+    if has_area(chat_data):
+        center_point = get_area_center_point(chat_data=chat_data)
+        radius = get_area_radius(chat_data=chat_data)
+
         current_area_text = get_text(lang, 'select_area_text1').format(center_point_latitude=center_point[0],
                                                                        center_point_longitude=center_point[1],
                                                                        radius_m=radius)
@@ -67,13 +55,26 @@ def select_area(update: Update, context: CallbackContext):
         text += f"{current_area_text}\n" \
                 f"{current_area_url}\n\n"
 
-    text += get_text(lang, 'select_area_text2')
+        # show center point and radius button if an area has been selected previously
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('location')} {get_text(lang, 'change_center_point')}",
+                                          callback_data='change_center_point'),
+                     InlineKeyboardButton(text=f"{get_emoji('radius')} {get_text(lang, 'change_radius')}",
+                                          callback_data='change_radius')],
+                    [InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
+                                          callback_data='back_to_overview')]]
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
-                                      callback_data='back_to_overview')]]
+        # register 'change center point' / 'change radius' button click handlers
+        return_step = STEP2
+    # ask for area
+    else:
+        text += get_text(lang, 'ask_for_center_point')
 
-    if query:
-        context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
+                                          callback_data='back_to_overview')]]
+        # register location message input handler
+        return_step = STEP0
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
     message_user(bot=context.bot,
                  chat_id=chat_id,
@@ -83,12 +84,12 @@ def select_area(update: Update, context: CallbackContext):
                  keyboard=keyboard,
                  category=MessageCategory.main)
 
-    return STEP0
+    return return_step
 
 
 @log_message
 def set_quest_center_point(update: Update, context: CallbackContext):
-    """Set the center point location, ask for radius"""
+    """Set the center point location"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     chat_data = context.chat_data
@@ -97,18 +98,10 @@ def set_quest_center_point(update: Update, context: CallbackContext):
 
     message = update.effective_message
 
-    text = f"{get_emoji('radius')} *{get_text(lang, 'select_radius')}*\n\n"
-
-    # show invalid radius warning
-    if 'area_radius_invalid' in chat_data and chat_data['area_radius_invalid']:
-        del chat_data['area_radius_invalid']
-        text += f"{get_emoji('warning')} *{get_text(lang, 'selected_radius_invalid')}*\n\n"
-    elif 'area_radius_message_invalid' in chat_data and chat_data['area_radius_message_invalid']:
-        del chat_data['area_radius_message_invalid']
-        text += f"{get_emoji('warning')} *{get_text(lang, 'selected_radius_invalid')}*\n\n"
+    location_failed_reason = None
 
     # check for location
-    elif message.location:
+    if message.location:
         set_area_center_point(chat_data=chat_data,
                               center_point=[message.location.latitude, message.location.longitude])
 
@@ -120,40 +113,85 @@ def set_quest_center_point(update: Update, context: CallbackContext):
             geo_location = geo_locator.geocode(message.text, timeout=10)
             set_area_center_point(chat_data=chat_data,
                                   center_point=[geo_location.latitude, geo_location.longitude])
-        except Exception:
-            # delete input message after 5 seconds
-            context.job_queue.run_once(callback=job_delete_message,
-                                       context={'chat_id': chat_id, 'message_id': msg_id},
-                                       when=5)
+        except Exception as e:
+            logger.warning(f"Failed to get location for search string '{message.text}' in chat #{chat_id} with "
+                           f"user #{user_id} (@{username})")
 
-            chat_data['area_center_point_geo_localization_failed'] = True
-            return select_area(update, context)
-    # start over if user sent anything else
+            location_failed_reason = "geo_localization_failed"
+
+    # everything else is invalid
     else:
-        # delete input message after 5 seconds
-        context.job_queue.run_once(callback=job_delete_message,
-                                   context={'chat_id': chat_id, 'message_id': msg_id},
-                                   when=5)
-
-        chat_data['area_center_point_message_invalid'] = True
-        return select_area(update, context)
+        location_failed_reason = 'message_invalid'
 
     # delete input message after 5 seconds
     context.job_queue.run_once(callback=job_delete_message,
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
 
-    center_point = get_area_center_point(chat_data=chat_data)
+    # ask user for center point again if localization failed
+    if location_failed_reason:
+        text = f"{get_emoji('location')} *{get_text(lang, 'select_center_point')}*\n\n"
 
-    # ask for radius
-    text += get_text(lang, 'select_radius_text0').format(center_point_latitude=center_point[0],
-                                                         center_point_longitude=center_point[1])
+        if location_failed_reason == 'geo_localization_failed':
+            text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_geo_localization_failed')}*\n\n"
+        elif location_failed_reason == 'message_invalid':
+            text += f"{get_emoji('warning')} *{get_text(lang, 'selected_area_message_invalid')}*\n\n"
+
+        text += get_text(lang, 'ask_for_center_point')
+
+        callback_data = 'select_area' if has_area(chat_data) else 'back_to_overview'
+
+        keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
+                                          callback_data=callback_data)]]
+
+        # delete main message so new main message appears beneath user input
+        delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
+        message_user(bot=context.bot,
+                     chat_id=chat_id,
+                     chat_data=chat_data,
+                     message_type=MessageType.message,
+                     payload=text,
+                     keyboard=keyboard,
+                     category=MessageCategory.main)
+
+        return_step = STEP0
+
+    # finish if user has set radius already
+    elif has_area(chat_data):
+        show_area_summary(context.bot, chat_id, chat_data)
+
+        return_step = ConversationHandler.END
+
+    # continue with asking radius. this is the fist time the user sets up an area
+    else:
+        ask_for_radius(context.bot, chat_id, chat_data)
+
+        return_step = STEP1
+
+    return return_step
+
+
+@log_message
+def change_center_point(update: Update, context: CallbackContext):
+    """Button callback for changing the center point location"""
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    chat_data = context.chat_data
+
+    lang = get_language(chat_data)
+
+    query = update.callback_query
+
+    popup_text = get_text(lang, 'ask_for_center_point', format_str=False)
+
+    text = f"{get_emoji('location')} *{get_text(lang, 'select_center_point')}*\n\n" \
+           f"{get_text(lang, 'ask_for_center_point')}"
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
-                                      callback_data='back_to_overview')]]
-
-    # delete main message so new main message appears beneath user input
-    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+                                      callback_data='select_area')]]
 
     message_user(bot=context.bot,
                  chat_id=chat_id,
@@ -163,12 +201,13 @@ def set_quest_center_point(update: Update, context: CallbackContext):
                  keyboard=keyboard,
                  category=MessageCategory.main)
 
-    return STEP1
+    # listen to location messages
+    return STEP0
 
 
 @log_message
 def set_quest_radius(update: Update, context: CallbackContext):
-    """Set the radius, show area summary"""
+    """Message callback for setting the radius"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     chat_data = context.chat_data
@@ -179,27 +218,84 @@ def set_quest_radius(update: Update, context: CallbackContext):
 
     regex_number = re.compile(r'^\d+$')
 
+    error = None
+
+    # only allow text messages
     if not message.text:
-        context.chat_data['area_radius_message_invalid'] = True
-        return set_quest_center_point(update, context)
+        error = get_text(lang, 'selected_radius_message_invalid')
 
     # make sure input is a number
-    if regex_number.match(message.text) and int(message.text) > 0:
+    elif regex_number.match(message.text) and int(message.text) > 0:
         set_area_radius(chat_data=chat_data, radius=int(message.text))
+
     # start over
     else:
-        # delete input message after 5 seconds
-        context.job_queue.run_once(callback=job_delete_message,
-                                   context={'chat_id': chat_id, 'message_id': msg_id},
-                                   when=5)
-
-        context.chat_data['area_radius_invalid'] = True
-        return set_quest_center_point(update, context)
+        error = get_text(lang, 'selected_radius_invalid')
 
     # delete input message after 5 seconds
     context.job_queue.run_once(callback=job_delete_message,
                                context={'chat_id': chat_id, 'message_id': msg_id},
                                when=5)
+    # repeat if radius is not correct
+    if error:
+        ask_for_radius(bot=context.bot, chat_id=chat_id, chat_data=chat_data, error=error)
+        return STEP1
+
+    show_area_summary(bot=context.bot, chat_id=chat_id, chat_data=chat_data)
+    return ConversationHandler.END
+
+
+@log_message
+def change_radius(update: Update, context: CallbackContext):
+    """Button callback for changing radius independent from center point"""
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    ask_for_radius(context.bot, chat_id, context.chat_data, query=update.callback_query)
+
+    return STEP1
+
+
+def ask_for_radius(bot, chat_id, chat_data, error=None, query=None):
+    """Ask the user for a radius to the center point"""
+    lang = get_language(chat_data)
+
+    center_point = get_area_center_point(chat_data=chat_data)
+
+    if query:
+        popup_text = get_text(lang, 'select_radius_text1', format_str=False)
+        bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+
+    text = f"{get_emoji('radius')} *{get_text(lang, 'select_radius')}*\n\n"
+
+    if error:
+        text += f"{get_emoji('warning')} {error}\n\n"
+
+    # ask for radius
+    radius_question = get_text(lang, 'select_radius_text0').format(center_point_latitude=center_point[0],
+                                                                   center_point_longitude=center_point[1])
+    text += f"{radius_question}\n\n" \
+            f"{get_text(lang, 'select_radius_text1')}"
+
+    callback_data = 'select_area' if has_area(chat_data) else 'back_to_overview'
+
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
+                                      callback_data=callback_data)]]
+
+    # delete main message so new main message appears beneath user input
+    delete_message_in_category(bot, chat_id, chat_data, MessageCategory.main)
+
+    message_user(bot=bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
+
+def show_area_summary(bot, chat_id, chat_data):
+    """Show a summary of the selected area"""
+    lang = get_language(chat_data)
 
     center_point = get_area_center_point(chat_data=chat_data)
     radius = get_area_radius(chat_data=chat_data)
@@ -215,20 +311,18 @@ def set_quest_radius(update: Update, context: CallbackContext):
            f"{selected_area_url}"
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
-                                      callback_data='overview')]]
+                                      callback_data='select_area')]]
 
     # delete main message so new main message appears beneath user input
-    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+    delete_message_in_category(bot, chat_id, chat_data, MessageCategory.main)
 
-    message_user(bot=context.bot,
+    message_user(bot=bot,
                  chat_id=chat_id,
                  chat_data=chat_data,
                  message_type=MessageType.message,
                  payload=text,
                  keyboard=keyboard,
                  category=MessageCategory.main)
-
-    return ConversationHandler.END
 
 
 @log_message
