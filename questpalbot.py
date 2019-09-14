@@ -162,7 +162,7 @@ def error(update: Update, context: CallbackContext):
     if update:
         if update.effective_message:
             (chat_id, msg_id, user_id, username) = extract_ids(update)
-            lang = profile.get_language(context.chat_data)
+            lang = profile.get_language(context.chat_data) if profile.get_language(context.chat_data) else 'en'
             text = f"{get_emoji('bug')} *{get_text(lang, 'error_occurred_title')}*\n\n" \
                    f"{get_text(lang, 'error_occurred_message').format(provider=bot_provider)}"
             keyboard = [[InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
