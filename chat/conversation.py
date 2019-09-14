@@ -976,18 +976,10 @@ def send_next_quest(update: Update, context: CallbackContext):
                          keyboard=[],
                          category=MessageCategory.main)
 
-            row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_collected')}",
-                                        callback_data=f'quest_collected {closest_stop_id}')]
-
-            # only show skip button if more then one quests remain
-            if len(skipped_quests) > 1:
-                row.append(InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
-                                                callback_data=f'quest_skip {closest_stop_id}'))
-
-            row.append(InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
-                                            callback_data=f'quest_ignore {closest_stop_id}'))
-
-            keyboard = [row,
+            keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_collected')}",
+                                              callback_data=f'quest_collected {closest_stop_id}'),
+                         InlineKeyboardButton(text=f"{get_emoji('trash')} {get_text(lang, 'quest_ignore')}",
+                                              callback_data=f'quest_ignore {closest_stop_id}')],
                         [InlineKeyboardButton(text=f"{get_emoji('finish')} {get_text(lang, 'end_hunt')}",
                                               callback_data='end_hunt')]]
 
@@ -1013,7 +1005,7 @@ def send_next_quest(update: Update, context: CallbackContext):
         ignored = len(chat_data['ignored_quests']) if 'ignored_quests' in chat_data else 0
         done_percent = round(100 * collected / (collected + ignored))
 
-        time_per_quest = (time_delta.seconds//(collected + ignored))//60
+        time_per_quest = (time_delta.seconds // (collected + ignored)) // 60
         avg_time = get_text(lang, 'minutes').format(minutes=time_per_quest)
 
         if hours > 0:
