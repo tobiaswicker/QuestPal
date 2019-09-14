@@ -1153,7 +1153,45 @@ def quest_collected(update: Update, context: CallbackContext):
     if stop_id in quests_found:
         chat_data['user_location'] = [quests_found[stop_id].latitude, quests_found[stop_id].longitude]
 
+    if 'do_not_show_collected_hint' not in chat_data:
+        return show_collected_hint(update, context)
+
     return send_next_quest(update, context)
+
+
+def show_collected_hint(update: Update, context: CallbackContext):
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    chat_data = context.chat_data
+
+    lang = get_language(chat_data)
+
+    query = update.callback_query
+
+    popup_text = get_text(lang, 'quest_collected_hint', format_str=False).format(reset=get_text(lang, 'reset_hunt'))
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text[:200], show_alert=False)
+
+    text = f"{get_emoji('info')} *{get_text(lang, 'hint')}*\n\n" \
+           f"{get_text(lang, 'quest_collected_hint').format(reset=get_text(lang, 'reset_hunt'))}"
+
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'do_not_show_hint_again')}",
+                                      callback_data='hint do_not_show_collected_hint')],
+                [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'ok')}",
+                                      callback_data='continue_hunt')]]
+
+    # remove location
+    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.location)
+
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
+    return STEP2
 
 
 @log_message
@@ -1169,6 +1207,51 @@ def quest_skip(update: Update, context: CallbackContext):
     else:
         chat_data['skipped_quests'].append(stop_id)
 
+    if 'do_not_show_skipped_hint' not in chat_data:
+        return show_skipped_hint(update, context)
+
+    return send_next_quest(update, context)
+
+
+def show_skipped_hint(update: Update, context: CallbackContext):
+    (chat_id, msg_id, user_id, username) = extract_ids(update)
+
+    chat_data = context.chat_data
+
+    lang = get_language(chat_data)
+
+    query = update.callback_query
+
+    popup_text = get_text(lang, 'quest_skipped_hint').format(enqueue=get_text(lang, 'quests_enqueue_skipped'))
+
+    context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text[:200], show_alert=False)
+
+    text = f"{get_emoji('info')} *{get_text(lang, 'hint')}*\n\n" \
+           f"{get_text(lang, 'quest_skipped_hint').format(enqueue=get_text(lang, 'quests_enqueue_skipped'))}"
+
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'do_not_show_hint_again')}",
+                                      callback_data='hint do_not_show_skipped_hint')],
+                [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'ok')}",
+                                      callback_data='continue_hunt')]]
+
+    # remove location
+    delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.location)
+
+    message_user(bot=context.bot,
+                 chat_id=chat_id,
+                 chat_data=chat_data,
+                 message_type=MessageType.message,
+                 payload=text,
+                 keyboard=keyboard,
+                 category=MessageCategory.main)
+
+    return STEP2
+
+
+@log_message
+def process_hint(update: Update, context: CallbackContext):
+    do_not_show_hint = update.callback_query.data.split()[1]
+    context.chat_data[do_not_show_hint] = True
     return send_next_quest(update, context)
 
 

@@ -304,7 +304,8 @@ def main():
                                  CallbackQueryHandler(callback=conversation.end_hunt, pattern="^end_hunt"),
                                  CallbackQueryHandler(callback=conversation.enqueue_skipped,
                                                       pattern="^enqueue_skipped"),
-                                 CallbackQueryHandler(callback=conversation.continue_hunt, pattern="^continue_hunt")]
+                                 CallbackQueryHandler(callback=conversation.continue_hunt, pattern="^continue_hunt"),
+                                 CallbackQueryHandler(callback=conversation.process_hint, pattern="^hint")]
         },
         fallbacks=[CallbackQueryHandler(callback=chat.start, pattern='^back_to_overview')],
         allow_reentry=True,
