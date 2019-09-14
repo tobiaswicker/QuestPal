@@ -1,7 +1,7 @@
 import logging
 import re
 
-from datetime import date
+from datetime import date, datetime
 from geopy.geocoders import Nominatim
 
 from telegram import Update, InlineKeyboardButton
@@ -737,7 +737,7 @@ def start_hunt(update: Update, context: CallbackContext):
     # skip asking for hunt continuation / reset if the user has seen this question before
     # and is just here because of invalid / failed location
     if 'start_location_message_invalid' in chat_data or 'start_location_geo_localization_failed' in chat_data:
-        return ask_for_location(update, context)
+        return ask_for_start_location(update, context)
 
     # ask if user wants to continue previous hunt or start a new hunt if hunt date is still the same / day didn't change
     if 'hunt_date' in chat_data and chat_data['hunt_date'] == str(date.today()):
@@ -766,14 +766,14 @@ def start_hunt(update: Update, context: CallbackContext):
 
         return STEP0
 
-    return ask_for_location(update, context)
+    return ask_for_start_location(update, context)
 
 
 @log_message
 def continue_previous_hunt(update: Update, context: CallbackContext):
     """Continue the previous hunt"""
     context.chat_data['hunt_continued'] = True
-    return ask_for_location(update, context)
+    return ask_for_start_location(update, context)
 
 
 @log_message
@@ -781,10 +781,10 @@ def reset_previous_hunt(update: Update, context: CallbackContext):
     """Reset the previous hunt"""
     context.chat_data['hunt_reset'] = True
     clean_up_hunt(context.chat_data)
-    return ask_for_location(update, context)
+    return ask_for_start_location(update, context)
 
 
-def ask_for_location(update: Update, context: CallbackContext):
+def ask_for_start_location(update: Update, context: CallbackContext):
     """Ask the user for a location to start the hunt"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
@@ -880,19 +880,24 @@ def set_start_location(update: Update, context: CallbackContext):
     # delete main message so new main message appears beneath user input
     delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
 
+    # remember start time of hunt for stats
+    chat_data['hunt_time_start'] = datetime.now().strftime("%H:%M:%S")
+
     return send_next_quest(update, context)
 
 
 def clean_up_hunt(chat_data):
     """Clean up previous quest hunt"""
-    if 'fetched_quests' in chat_data:
-        del chat_data['fetched_quests']
+    if 'collected_quests' in chat_data:
+        del chat_data['collected_quests']
     if 'skipped_quests' in chat_data:
         del chat_data['skipped_quests']
     if 'ignored_quests' in chat_data:
         del chat_data['ignored_quests']
     if 'hunt_date' in chat_data:
         del chat_data['hunt_date']
+    if 'hunt_time_start' in chat_data:
+        del chat_data['hunt_time_start']
 
 
 def send_next_quest(update: Update, context: CallbackContext):
@@ -929,8 +934,8 @@ def send_next_quest(update: Update, context: CallbackContext):
             del chat_data['skipped_quests']
 
     # remove all finished quests
-    if 'fetched_quests' in chat_data:
-        for stop_id in chat_data['fetched_quests']:
+    if 'collected_quests' in chat_data:
+        for stop_id in chat_data['collected_quests']:
             if stop_id in quests_found:
                 del quests_found[stop_id]
 
@@ -971,8 +976,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                          keyboard=[],
                          category=MessageCategory.main)
 
-            row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
-                                        callback_data=f'quest_fetched {closest_stop_id}')]
+            row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_collected')}",
+                                        callback_data=f'quest_collected {closest_stop_id}')]
 
             # only show skip button if more then one quests remain
             if len(skipped_quests) > 1:
@@ -998,7 +1003,28 @@ def send_next_quest(update: Update, context: CallbackContext):
 
         popup_text = get_text(lang, 'hunt_quest_all_done', format_str=False)
 
+        start_datetime = datetime.strptime(f"{chat_data['hunt_date']} {chat_data['hunt_time_start']}",
+                                           '%Y-%m-%d %H:%M:%S')
+        time_delta = datetime.now() - start_datetime
+        hours = time_delta.seconds // 3600
+        minutes = (time_delta.seconds // 60) % 60
+
+        collected = len(chat_data['collected_quests']) if 'collected_quests' in chat_data else 0
+        ignored = len(chat_data['ignored_quests']) if 'ignored_quests' in chat_data else 0
+        done_percent = round(100 * collected / (collected + ignored))
+
+        if hours > 0:
+            quest_time = get_text(lang, 'hours_and_minutes').format(hours=hours, minutes=minutes)
+        else:
+            quest_time = get_text(lang, 'minutes').format(minutes=minutes)
+
+        quest_stats = get_text(lang, 'hunt_quest_all_done_stats').format(collected=collected,
+                                                                         ignored=ignored,
+                                                                         done_percent=done_percent,
+                                                                         hours_minutes=quest_time)
+
         text += f"{get_emoji('congratulation')} {get_text(lang, 'hunt_quest_all_done')}\n\n" \
+                f"{quest_stats}\n\n" \
                 f"{get_text(lang, 'hunt_quest_new_quests_tomorrow')}"
 
         if query:
@@ -1054,8 +1080,8 @@ def send_next_quest(update: Update, context: CallbackContext):
                  keyboard=[],
                  category=MessageCategory.main)
 
-    row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_fetched')}",
-                                callback_data=f'quest_fetched {closest_stop_id}')]
+    row = [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'quest_collected')}",
+                                callback_data=f'quest_collected {closest_stop_id}')]
 
     if len(quests_found) > 1 or skipped_quests:
         row.append(InlineKeyboardButton(text=f"{get_emoji('defer')} {get_text(lang, 'quest_skip')}",
@@ -1102,17 +1128,17 @@ def get_quest_summary(chat_data, quest: Quest, closest_distance):
 
 
 @log_message
-def quest_fetched(update: Update, context: CallbackContext):
+def quest_collected(update: Update, context: CallbackContext):
     """Mark a quest as done / fetched"""
     params = update.callback_query.data.split()
     stop_id = params[1]
 
     chat_data = context.chat_data
 
-    if 'fetched_quests' not in chat_data:
-        chat_data['fetched_quests'] = [stop_id]
+    if 'collected_quests' not in chat_data:
+        chat_data['collected_quests'] = [stop_id]
     else:
-        chat_data['fetched_quests'].append(stop_id)
+        chat_data['collected_quests'].append(stop_id)
 
     # get all quests for chat
     quests_found = get_all_quests_in_range(chat_data,
@@ -1209,7 +1235,7 @@ def enqueue_skipped(update: Update, context: CallbackContext):
 
 @log_message
 def end_hunt(update: Update, context: CallbackContext):
-    """End the hunt"""
+    """End the hunt early"""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
     chat_data = context.chat_data

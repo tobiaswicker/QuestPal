@@ -298,7 +298,7 @@ def main():
                                  CallbackQueryHandler(callback=conversation.reset_previous_hunt,
                                                       pattern="^reset_previous_hunt")],
             conversation.STEP1: [MessageHandler(callback=conversation.set_start_location, filters=Filters.all)],
-            conversation.STEP2: [CallbackQueryHandler(callback=conversation.quest_fetched, pattern="^quest_fetched"),
+            conversation.STEP2: [CallbackQueryHandler(callback=conversation.quest_collected, pattern="^quest_collected"),
                                  CallbackQueryHandler(callback=conversation.quest_skip, pattern="^quest_skip"),
                                  CallbackQueryHandler(callback=conversation.quest_ignore, pattern="^quest_ignore"),
                                  CallbackQueryHandler(callback=conversation.end_hunt, pattern="^end_hunt"),
