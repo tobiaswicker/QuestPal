@@ -362,8 +362,9 @@ def choose_quest_type(update: Update, context: CallbackContext):
         if tasks:
             text += f"\n" \
                     f"*{get_text(lang, 'tasks')}*\n"
-            for task_id in tasks:
-                text += f"- `{get_task_by_id(lang, task_id)}`\n"
+            task_names = [get_task_by_id(lang, task_id) for task_id in tasks]
+            for task in sorted(task_names):
+                text += f"- `{task}`\n"
 
     keyboard = [[InlineKeyboardButton(text=f"{get_emoji('pokemon')} {get_text(lang, 'add_pokemon')}",
                                       callback_data='choose_pokemon'),
