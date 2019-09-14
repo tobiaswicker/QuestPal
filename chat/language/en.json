@@ -77,7 +77,7 @@
     "hunt_quest_ignore_info": "If you ignore this quest's location, it will be completely removed from today's queue.",
     "hunt_quest_ignore_confirm": "Do you really want to ignore this quest's location?",
 	"hunt_quest_all_done": "*Congratulation!* You have completed all quests for today!",
-	"hunt_quest_all_done_stats": "You have collected {collected} quests, ignored {ignored} quests and thus completed {done_percent}%.\nThe hunt took you {hours_minutes}.",
+	"hunt_quest_all_done_stats": "You have collected {collected} quests, ignored {ignored} quests and thus completed {done_percent}%.\nThe hunt took you {hours_minutes}. On average, each quest took {avg_quest_time_minutes}.",
 	"hours_and_minutes": "{hours} hours and {minutes} minutes",
 	"minutes": "{minutes} minutes",
 	"hunt_quest_new_quests_tomorrow": "Come back tomorrow to hunt more quests.",

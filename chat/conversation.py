@@ -1013,6 +1013,9 @@ def send_next_quest(update: Update, context: CallbackContext):
         ignored = len(chat_data['ignored_quests']) if 'ignored_quests' in chat_data else 0
         done_percent = round(100 * collected / (collected + ignored))
 
+        time_per_quest = (time_delta.seconds//(collected + ignored))//60
+        avg_time = get_text(lang, 'minutes').format(minutes=time_per_quest)
+
         if hours > 0:
             quest_time = get_text(lang, 'hours_and_minutes').format(hours=hours, minutes=minutes)
         else:
@@ -1021,7 +1024,8 @@ def send_next_quest(update: Update, context: CallbackContext):
         quest_stats = get_text(lang, 'hunt_quest_all_done_stats').format(collected=collected,
                                                                          ignored=ignored,
                                                                          done_percent=done_percent,
-                                                                         hours_minutes=quest_time)
+                                                                         hours_minutes=quest_time,
+                                                                         avg_quest_time_minutes=avg_time)
 
         text += f"{get_emoji('congratulation')} {get_text(lang, 'hunt_quest_all_done')}\n\n" \
                 f"{quest_stats}\n\n" \

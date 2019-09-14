@@ -77,7 +77,7 @@
     "hunt_quest_ignore_info": "Wenn du diesen Quest-Standort ignorierst, wird er vollständig aus der heutigen Warteschlange entfernt.",
     "hunt_quest_ignore_confirm": "Möchtest du diesen Quest-Standort wirklich ignorieren?",
 	"hunt_quest_all_done": "*Glückwunsch!* Du hast alle Quests für heute abgearbeitet!",
-	"hunt_quest_all_done_stats": "Du hast {collected} Quests eingesammelt, {ignored} Quests ignoriert und damit {done_percent}% abgeschlossen.\nDie Jagd dauerte {hours_minutes}.",
+	"hunt_quest_all_done_stats": "Du hast {collected} Quests eingesammelt, {ignored} Quests ignoriert und damit {done_percent}% abgeschlossen.\nDie Jagd dauerte {hours_minutes}. Pro Quest hast du somit im Schnitt {avg_quest_time_minutes} gebraucht.",
 	"hours_and_minutes": "{hours} Stunden und {minutes} Minuten",
 	"minutes": "{minutes} Minuten",
 	"hunt_quest_new_quests_tomorrow": "Komme morgen wieder, um weitere Quests zu jagen.",
