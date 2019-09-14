@@ -950,8 +950,12 @@ def send_next_quest(update: Update, context: CallbackContext):
     # remove all ignored quests
     if 'ignored_quests' in chat_data:
         for stop_id in chat_data['ignored_quests']:
+            # remove from open quests
             if stop_id in quests_found:
                 del quests_found[stop_id]
+            # remove from skipped quests
+            if stop_id in skipped_quests:
+                del skipped_quests[stop_id]
 
     # make sure there are quests remaining
     if not quests_found:
