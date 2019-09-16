@@ -12,7 +12,7 @@ _bot_config = _config['bot']
 bot_use_message_queue = _bot_config.getboolean('use_message_queue', True)
 bot_token = _bot_config.get('token')
 bot_provider = _bot_config.get('provider').replace('@', '')
-bot_devs = _bot_config.get('dev_user_ids').split(",")
+bot_devs = [int(user_id) for user_id in _bot_config.get('dev_user_ids').split(",")]
 bot_author = "farstars"
 
 _mysql_config = _config['mysql']
