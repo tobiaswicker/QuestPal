@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import logging
+import os
 import sys
 import traceback
+from threading import Thread
 
 import mysql.connector
 import requests
@@ -19,7 +21,7 @@ from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
 from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
-    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_provider
+    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_provider, bot_devs
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
     set_bot
 
@@ -202,6 +204,15 @@ def error(update: Update, context: CallbackContext):
 
 
 def main():
+    def stop_and_restart():
+        """Gracefully stop the Updater and replace the current process with a new one"""
+        updater.stop()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def restart(update: Update, context: CallbackContext):
+        update.message.reply_text('Bot is restarting...')
+        Thread(target=stop_and_restart).start()
+
     logger.info("Starting Bot.")
 
     # request object to bot
@@ -237,6 +248,9 @@ def main():
 
     # get the dispatcher to register handlers
     dp = updater.dispatcher
+
+    # restart handler for devs
+    dp.add_handler(CommandHandler('r', restart, filters=Filters.user(user_id=bot_devs)))
 
     # overview
     dp.add_handler(CommandHandler(callback=chat.start, command='start'))
