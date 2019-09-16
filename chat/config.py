@@ -13,6 +13,7 @@ bot_token = _bot_config.get('token')
 bot_provider = _bot_config.get('provider').replace('@', '')
 bot_devs = [int(user_id) for user_id in _bot_config.get('dev_user_ids').split(",")]
 bot_author = "farstars"
+log_file = _bot_config.get('log_file')
 
 _mysql_config = _config['mysql']
 mysql_host = _mysql_config.get('host')
