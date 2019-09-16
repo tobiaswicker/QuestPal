@@ -20,8 +20,8 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
-from chat.config import bot_token, bot_use_message_queue, log_format, log_level, \
-    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db, bot_provider, bot_devs
+from chat.config import bot_token, bot_use_message_queue, bot_provider, bot_devs, \
+    mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
     set_bot
 
@@ -29,7 +29,10 @@ from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokem
 from quest.quest import Quest
 
 # enable logging
-logging.basicConfig(format=log_format, level=log_level)
+logging.basicConfig(format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
+                    level=logging.INFO,
+                    handlers=[logging.FileHandler(filename='bot.log', mode='a'),
+                              logging.StreamHandler()])
 logger = logging.getLogger(__name__)
 
 latest_quest_scan = 0

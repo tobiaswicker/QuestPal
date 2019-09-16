@@ -11,14 +11,12 @@ from chat.profile import get_language, get_area_center_point, set_area_center_po
     has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, message_user, MessageType, MessageCategory, \
     delete_message_in_category, job_delete_message
-from chat.config import log_format, log_level, quest_map_url
+from chat.config import quest_map_url
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
     get_task_by_id, get_all_tasks, get_id_by_task, get_all_quests_in_range, get_closest_quest
 from quest.quest import Quest
 
-# enable logging
-logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
 # enumerate conversation steps

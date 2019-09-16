@@ -1,6 +1,5 @@
 import os
 import configparser
-import logging
 
 _config = configparser.ConfigParser()
 
@@ -21,9 +20,6 @@ mysql_port = _mysql_config.get('port')
 mysql_user = _mysql_config.get('user')
 mysql_password = _mysql_config.get('password')
 mysql_db = _mysql_config.get('database')
-
-log_format = '%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s'
-log_level = logging.INFO
 
 msg_folder = 'message_log'
 

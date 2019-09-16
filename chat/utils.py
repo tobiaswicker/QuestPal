@@ -9,10 +9,8 @@ from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 from telegram.utils.promise import Promise
 
-from chat.config import msg_folder, log_format, log_level, bot_devs
+from chat.config import msg_folder, bot_devs
 
-# enable logging
-logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
 _texts = {}

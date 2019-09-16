@@ -3,10 +3,6 @@ import telegram.bot
 
 from telegram.ext import messagequeue
 
-from chat.config import log_format, log_level
-
-# enable logging
-logging.basicConfig(format=log_format, level=log_level)
 logger = logging.getLogger(__name__)
 
 
