@@ -796,9 +796,6 @@ def ask_for_start_location(update: Update, context: CallbackContext):
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
-    # set hunting flag
-    chat_data['is_hunting'] = True
-
     if 'hunt_continued' in chat_data:
         del chat_data['hunt_continued']
         text += f"{get_text(lang, 'hunt_continued')}\n\n"
@@ -879,6 +876,9 @@ def set_start_location(update: Update, context: CallbackContext):
 
     # delete main message so new main message appears beneath user input
     delete_message_in_category(context.bot, chat_id, chat_data, MessageCategory.main)
+
+    # set hunting flag
+    chat_data['is_hunting'] = True
 
     # remember start time of hunt for stats
     chat_data['hunt_time_start'] = datetime.now().strftime("%H:%M:%S")
