@@ -999,32 +999,40 @@ def send_next_quest(update: Update, context: CallbackContext):
 
         popup_text = get_text(lang, 'hunt_quest_all_done', format_str=False)
 
-        start_datetime = datetime.strptime(f"{chat_data['hunt_date']} {chat_data['hunt_time_start']}",
-                                           '%Y-%m-%d %H:%M:%S')
-        time_delta = datetime.now() - start_datetime
-        hours = time_delta.seconds // 3600
-        minutes = (time_delta.seconds // 60) % 60
+        # this should always be true, but just make sure it definitely is
+        if 'hunt_date' in chat_data and 'hunt_time_start' in chat_data:
+            start_datetime = datetime.strptime(f"{chat_data['hunt_date']} {chat_data['hunt_time_start']}",
+                                               '%Y-%m-%d %H:%M:%S')
+            time_delta = datetime.now() - start_datetime
+            hours = time_delta.seconds // 3600
+            minutes = (time_delta.seconds // 60) % 60
 
-        collected = len(chat_data['collected_quests']) if 'collected_quests' in chat_data else 0
-        ignored = len(chat_data['ignored_quests']) if 'ignored_quests' in chat_data else 0
-        done_percent = round(100 * collected / (collected + ignored))
+            collected = len(chat_data['collected_quests']) if 'collected_quests' in chat_data else 0
+            ignored = len(chat_data['ignored_quests']) if 'ignored_quests' in chat_data else 0
+            done_percent = round(100 * collected / (collected + ignored))
 
-        time_per_quest = (time_delta.seconds // (collected + ignored)) // 60
-        avg_time = get_text(lang, 'minutes').format(minutes=time_per_quest)
+            time_per_quest = (time_delta.seconds // (collected + ignored)) // 60
+            avg_time = get_text(lang, 'minutes').format(minutes=time_per_quest)
 
-        if hours > 0:
-            quest_time = get_text(lang, 'hours_and_minutes').format(hours=hours, minutes=minutes)
+            if hours > 0:
+                quest_time = get_text(lang, 'hours_and_minutes').format(hours=hours, minutes=minutes)
+            else:
+                quest_time = get_text(lang, 'minutes').format(minutes=minutes)
+
+            quest_stats = get_text(lang, 'hunt_quest_all_done_stats').format(collected=collected,
+                                                                             ignored=ignored,
+                                                                             done_percent=done_percent,
+                                                                             hours_minutes=quest_time,
+                                                                             avg_quest_time_minutes=avg_time)
+            quest_stats += "\n\n"
+
+        # should never happen, log if it does
         else:
-            quest_time = get_text(lang, 'minutes').format(minutes=minutes)
-
-        quest_stats = get_text(lang, 'hunt_quest_all_done_stats').format(collected=collected,
-                                                                         ignored=ignored,
-                                                                         done_percent=done_percent,
-                                                                         hours_minutes=quest_time,
-                                                                         avg_quest_time_minutes=avg_time)
+            quest_stats = ""
+            logger.warning("Failed to get 'hunt_date' and / or 'hunt_time_start' as they are missing in chat_data.")
 
         text += f"{get_emoji('congratulation')} {get_text(lang, 'hunt_quest_all_done')}\n\n" \
-                f"{quest_stats}\n\n" \
+                f"{quest_stats}" \
                 f"{get_text(lang, 'hunt_quest_new_quests_tomorrow')}"
 
         if query:
