@@ -1347,6 +1347,10 @@ def end_hunt(update: Update, context: CallbackContext):
 
     text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n"
 
+    # remove hunting flag
+    if 'is_hunting' in chat_data:
+        del chat_data['is_hunting']
+
     # end hunt if user really wants to stop hunting
     if query and len(query.data.split()) == 2:
         popup_text = get_text(lang, 'hunt_quest_finished_early', format_str=False)
@@ -1355,9 +1359,6 @@ def end_hunt(update: Update, context: CallbackContext):
 
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                           callback_data='overview')]]
-
-        if 'is_hunting' in chat_data:
-            del chat_data['is_hunting']
 
         return_value = ConversationHandler.END
 
@@ -1398,4 +1399,7 @@ def end_hunt(update: Update, context: CallbackContext):
 
 def continue_hunt(update: Update, context: CallbackContext):
     """Continue the hunt"""
+    # set hunting flag again
+    context.chat_data['is_hunting'] = True
+
     return send_next_quest(update, context)
