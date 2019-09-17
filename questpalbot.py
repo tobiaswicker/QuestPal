@@ -20,7 +20,7 @@ from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
 from chat.admin import restart
-from chat.config import bot_token, bot_use_message_queue, bot_provider, bot_devs, log_file, \
+from chat.config import bot_token, bot_use_message_queue, bot_provider, log_file, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
     set_bot
@@ -227,6 +227,7 @@ def main():
         bot = Bot(bot_token, request=request)
 
     set_bot(bot=bot)
+    notify_devs(text="Starting Bot.")
 
     persistence = PicklePersistence(filename='persistent_data.pickle')
 
@@ -243,8 +244,8 @@ def main():
     # get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # restart handler for devs
-    dp.add_handler(CommandHandler('r', partial(restart, updater), filters=Filters.user(user_id=bot_devs)))
+    # restart handler for devs / admins
+    dp.add_handler(CallbackQueryHandler(callback=partial(restart, updater=updater), pattern='^restart$'))
 
     # overview
     dp.add_handler(CommandHandler(callback=chat.start, command='start'))

@@ -120,6 +120,7 @@ def get_emoji(emoji):
         "contact": "💬",
         "add": "➕",
         "bug": "👻",
+        "restart": "🔄",
         "question_mark": "❓"
     }
 

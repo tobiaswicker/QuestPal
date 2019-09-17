@@ -10,7 +10,7 @@ from chat.profile import get_language, set_language, has_accepted_tos_privacy, a
     get_area_center_point, get_area_radius, has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, get_all_languages, MessageType, MessageCategory, \
     message_user, job_delete_message, delete_message_in_category
-from chat.config import bot_author, bot_provider, tos_date, tos_city, tos_country, quest_map_url
+from chat.config import bot_author, bot_provider, tos_date, tos_city, tos_country, quest_map_url, bot_devs
 
 from quest.data import quests, get_all_quests_in_range
 
@@ -203,6 +203,10 @@ def start(update: Update, context: CallbackContext):
                                       callback_data='settings'),
                  InlineKeyboardButton(text=f"{get_emoji('info')} {get_text(lang, 'info')}",
                                       callback_data='info')]]
+
+    if user.id in bot_devs:
+        keyboard.append([InlineKeyboardButton(text=f"{get_emoji('restart')} {get_text(lang, 'restart')}",
+                                              callback_data='restart')])
 
     # user pressed button, edit message
     if is_button_action:

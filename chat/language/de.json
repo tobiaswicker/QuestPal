@@ -14,6 +14,7 @@
 	"overview_text1": "Ich bin @{bot} und ich helfe dir, die Quests, die du suchst, so schnell wie möglich zu finden.",
 	"quests_summary": "Es gibt zur Zeit *{quests_count}* Quests, die deinen Kriterien entsprechen.",
 	"no_quests_summary": "Es gibt zur Zeit *keine* Quests, die deinen Kriterien entsprechen.",
+    "restart": "Restart Bot",
 	"quests_summary_hint": "Wähle _{hunt_quests}_, um mit der Jagd zu beginnen.",
 	"select_area": "Bereich Festlegen",
 	"select_center_point": "Mittelpunkt Festlegen",

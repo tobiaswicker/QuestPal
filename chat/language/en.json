@@ -14,6 +14,7 @@
 	"overview_text1": "I'm @{bot} and I'll help you find the quests you're looking for as fast as possible.",
 	"quests_summary": "There are currently *{quests_count}* quests that match your criteria.",
 	"no_quests_summary": "There are currently *no* quests that match your criteria.",
+    "restart": "Restart Bot",
 	"quests_summary_hint": "Select _{hunt_quests}_, to start the hunt.",
 	"select_area": "Select Area",
 	"select_center_point": "Set Center Point",
