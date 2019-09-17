@@ -26,6 +26,7 @@ msg_folder = 'message_log'
 
 _map_config = _config['map']
 quest_map_url = _map_config.get('quest_map_url')
+maps_url = _map_config.get('maps_url') if _map_config.get('maps_url') else 'https://maps.google.com/'
 
 _tos_config = _config['tos']
 tos_country = _tos_config['country']

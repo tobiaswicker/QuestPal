@@ -11,7 +11,7 @@ from chat.profile import get_language, get_area_center_point, set_area_center_po
     has_area, has_quests
 from chat.utils import get_emoji, get_text, log_message, extract_ids, message_user, MessageType, MessageCategory, \
     delete_message_in_category, job_delete_message
-from chat.config import quest_map_url
+from chat.config import quest_map_url, maps_url
 
 from quest.data import quests, quest_pokemon_list, quest_items_list, shiny_pokemon_list, get_item, get_pokemon, \
     get_task_by_id, get_all_tasks, get_id_by_task, get_all_quests_in_range, get_closest_quest
@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 
 # enumerate conversation steps
 STEP0, STEP1, STEP2, STEP3, STEP4, STEP5, STEP6, STEP7, STEP8 = range(9)
+
+area_url = "https://www.freemaptools.com/radius-around-point.htm?" \
+           "clat={center_point_latitude}&" \
+           "clng={center_point_longitude}&" \
+           "r={radius_km}&" \
+           "lc=FFFFFF&lw=1&fc=00FF00&mt=r&fs=true&nomoreradius=true"
 
 
 @log_message
@@ -47,17 +53,19 @@ def select_area(update: Update, context: CallbackContext):
         current_area_text = get_text(lang, 'select_area_text1').format(center_point_latitude=center_point[0],
                                                                        center_point_longitude=center_point[1],
                                                                        radius_m=radius)
-        current_area_url = get_text(lang, 'selected_area_url').format(center_point_latitude=center_point[0],
-                                                                      center_point_longitude=center_point[1],
-                                                                      radius_km=radius / 1000)
-        text += f"{current_area_text}\n" \
-                f"{current_area_url}\n\n"
+
+        current_area_url = area_url.format(center_point_latitude=center_point[0],
+                                           center_point_longitude=center_point[1],
+                                           radius_km=radius / 1000)
+        text += f"{current_area_text}"
 
         # show center point and radius button if an area has been selected previously
         keyboard = [[InlineKeyboardButton(text=f"{get_emoji('location')} {get_text(lang, 'change_center_point')}",
                                           callback_data='change_center_point'),
                      InlineKeyboardButton(text=f"{get_emoji('radius')} {get_text(lang, 'change_radius')}",
                                           callback_data='change_radius')],
+                    [InlineKeyboardButton(text=f"{get_emoji('map')} {get_text(lang, 'selected_area_map')}",
+                                          url=current_area_url)],
                     [InlineKeyboardButton(text=f"{get_emoji('overview')} {get_text(lang, 'overview')}",
                                           callback_data='back_to_overview')]]
 
@@ -276,7 +284,9 @@ def ask_for_radius(bot, chat_id, chat_data, error=None, query=None):
 
     callback_data = 'select_area' if has_area(chat_data) else 'back_to_overview'
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('location')} {get_text(lang, 'show_center_point')}",
+                                      url=f"{maps_url}?q={center_point[0]},{center_point[1]}")],
+                [InlineKeyboardButton(text=f"{get_emoji('cancel')} {get_text(lang, 'cancel')}",
                                       callback_data=callback_data)]]
 
     # delete main message so new main message appears beneath user input
@@ -301,14 +311,16 @@ def show_area_summary(bot, chat_id, chat_data):
     area_selected_text = get_text(lang, 'area_selected_text0').format(center_point_latitude=center_point[0],
                                                                       center_point_longitude=center_point[1],
                                                                       radius_m=radius)
-    selected_area_url = get_text(lang, 'selected_area_url').format(center_point_latitude=center_point[0],
-                                                                   center_point_longitude=center_point[1],
-                                                                   radius_km=radius / 1000)
-    text = f"{get_emoji('area')} *{get_text(lang, 'area_selected')}*\n\n" \
-           f"{area_selected_text}\n" \
-           f"{selected_area_url}"
+    current_area_url = area_url.format(center_point_latitude=center_point[0],
+                                       center_point_longitude=center_point[1],
+                                       radius_km=radius / 1000)
 
-    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
+    text = f"{get_emoji('area')} *{get_text(lang, 'area_selected')}*\n\n" \
+           f"{area_selected_text}"
+
+    keyboard = [[InlineKeyboardButton(text=f"{get_emoji('map')} {get_text(lang, 'selected_area_map')}",
+                                      url=current_area_url)],
+                [InlineKeyboardButton(text=f"{get_emoji('checked')} {get_text(lang, 'done')}",
                                       callback_data='select_area')]]
 
     # delete main message so new main message appears beneath user input

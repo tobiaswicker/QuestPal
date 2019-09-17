@@ -90,6 +90,7 @@ def get_emoji(emoji):
         "language_en": "🇺🇸",
         "overview": "🎮",
         "area": "🌎",
+        "map": "🗺",
         "location": "📍",
         "radius": "📏",
         "quest": "📜",
