@@ -713,7 +713,7 @@ def start_hunt(update: Update, context: CallbackContext):
     # make sure there are quests to hunt
     if not quests_found:
         if query:
-            popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_quests_found')}"
+            popup_text = f"{get_emoji('warning')} {get_text(lang, 'no_quests_found', format_str=False)}"
             context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=True)
 
         text = f"{get_emoji('quest')} *{get_text(lang, 'hunt_quests')}*\n\n" \
@@ -1236,7 +1236,8 @@ def show_skipped_hint(update: Update, context: CallbackContext):
 
     query = update.callback_query
 
-    popup_text = get_text(lang, 'quest_skipped_hint').format(enqueue=get_text(lang, 'quests_enqueue_skipped'))
+    popup_text = get_text(lang, 'quest_skipped_hint', format_str=False)\
+        .format(enqueue=get_text(lang, 'quests_enqueue_skipped'))
 
     context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text[:200], show_alert=False)
 
