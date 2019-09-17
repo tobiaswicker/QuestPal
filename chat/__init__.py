@@ -1,1 +1,1 @@
-from chat import chat, config, conversation, profile, utils
+from chat import admin, chat, config, conversation, profile, utils

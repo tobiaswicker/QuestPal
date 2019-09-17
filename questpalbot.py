@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import logging
-import os
 import sys
 import traceback
-from threading import Thread
+from functools import partial
 
 import mysql.connector
 import requests
@@ -20,6 +19,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
+from chat.admin import restart
 from chat.config import bot_token, bot_use_message_queue, bot_provider, bot_devs, log_file, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
@@ -207,15 +207,6 @@ def error(update: Update, context: CallbackContext):
 
 
 def main():
-    def stop_and_restart():
-        """Gracefully stop the Updater and replace the current process with a new one"""
-        updater.stop()
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
-    def restart(update: Update, context: CallbackContext):
-        update.message.reply_text('Bot is restarting...')
-        Thread(target=stop_and_restart).start()
-
     logger.info("Starting Bot.")
 
     # request object to bot
@@ -253,7 +244,7 @@ def main():
     dp = updater.dispatcher
 
     # restart handler for devs
-    dp.add_handler(CommandHandler('r', restart, filters=Filters.user(user_id=bot_devs)))
+    dp.add_handler(CommandHandler('r', partial(restart, updater), filters=Filters.user(user_id=bot_devs)))
 
     # overview
     dp.add_handler(CommandHandler(callback=chat.start, command='start'))
