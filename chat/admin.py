@@ -28,6 +28,10 @@ def admins_only(func):
 def restart(update: Update, context: CallbackContext, updater: Updater, notify=True):
     """Restart the bot upon admin command"""
 
+    query = update.callback_query
+    if query:
+        context.bot.answer_callback_query(callback_query_id=query.id, text='Restarting bot now.')
+
     def stop_and_restart():
         """Gracefully stop the Updater and replace the current process with a new one"""
         updater.stop()
