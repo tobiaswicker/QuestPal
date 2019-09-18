@@ -18,7 +18,11 @@ def admins_only(func):
     def func_wrapper(update: Update, context: CallbackContext, *args, **kwargs):
         user = update.effective_user
         if user.id not in bot_devs:
-            logger.warning(f"Unauthorized access by user {user.first_name} (#{user.id} / @{user.username})")
+            warning = f"Unauthorized access to admin function by user {user.first_name} (#{user.id} / @{user.username})"
+            logger.warning(warning)
+            text = f"{get_emoji('warning')} *Unauthorized Access*\n\n" \
+                   f"{warning}"
+            notify_devs(text=text)
             return
         return func(update, context, *args, **kwargs)
     return func_wrapper
@@ -38,7 +42,9 @@ def restart(update: Update, context: CallbackContext, updater: Updater, notify=T
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     if notify:
-        notify_devs(text="Bot is restarting.")
+        text = f"{get_emoji('info')} *Restarting Bot*\n\n" \
+               f"Bot is restarting."
+        notify_devs(text=text)
 
     Thread(target=stop_and_restart).start()
 

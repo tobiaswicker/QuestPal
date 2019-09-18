@@ -227,7 +227,7 @@ def main():
         bot = Bot(bot_token, request=request)
 
     set_bot(bot=bot)
-    notify_devs(text="Starting Bot.")
+    notify_devs(text=f"{get_emoji('info')} *Starting Bot*\n\nBot is starting.")
 
     persistence = PicklePersistence(filename='persistent_data.pickle')
 
