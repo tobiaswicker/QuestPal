@@ -23,14 +23,14 @@ def admins_only(func):
     return func_wrapper
 
 
-def stop_and_restart(updater: Updater):
-    """Gracefully stop the Updater and replace the current process with a new one"""
-    updater.stop()
-    os.execl(sys.executable, sys.executable, *sys.argv)
-
-
 @admins_only
 def restart(update: Update, context: CallbackContext, updater: Updater):
     """Restart the bot upon admin command"""
+
+    def stop_and_restart():
+        """Gracefully stop the Updater and replace the current process with a new one"""
+        updater.stop()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
     notify_devs(text="Bot is restarting.")
-    Thread(target=stop_and_restart, args=[updater]).start()
+    Thread(target=stop_and_restart).start()
