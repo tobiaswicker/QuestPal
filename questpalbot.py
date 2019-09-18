@@ -209,7 +209,7 @@ def error(update: Update, context: CallbackContext):
 def main():
     logger.info("Starting Bot.")
 
-    # request object to bot
+    # request object for bot
     request = Request(con_pool_size=8)
 
     # use message queue bot version
@@ -244,7 +244,7 @@ def main():
     # get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # restart handler for devs / admins
+    # admin commands
     dp.add_handler(CallbackQueryHandler(callback=partial(restart, updater=updater), pattern='^restart_bot$'))
     dp.add_handler(CallbackQueryHandler(callback=partial(git_pull, updater=updater), pattern='^git_pull$'))
 

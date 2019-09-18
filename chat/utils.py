@@ -138,10 +138,38 @@ def dummy_callback(update: Update, context: CallbackContext):
     """Callback that just logs messages. Useful for unexpected callbacks."""
     (chat_id, msg_id, user_id, username) = extract_ids(update)
 
-    msg = update.effective_message.to_dict()
-    # logger.info(f"VALUES: {strip_false(msg, '', ['from'])}")
+    message = update.effective_message
+    if message.text:
+        if message.text.startswith('/'):
+            message_info = f"command '{message.text}'"
+        else:
+            message_info = f"text message '{message.text}'"
+    elif message.audio:
+        message_info = "audio message"
+    elif message.document:
+        message_info = "document"
+    elif message.game:
+        message_info = "game"
+    elif message.photo:
+        message_info = "photo"
+    elif message.sticker:
+        message_info = "sticker"
+    elif message.video:
+        message_info = "video"
+    elif message.voice:
+        message_info = "voice message"
+    elif message.video_note:
+        message_info = "video message"
+    elif message.contact:
+        message_info = "contact info"
+    elif message.location:
+        message_info = "location"
+    elif message.venue:
+        message_info = "location venue"
+    else:
+        message_info = f"message {message.to_dict()}"
 
-    logger.info(f"Received unexpected message from {username} ({user_id}) in chat {chat_id}: {msg}")
+    logger.info(f"Received unexpected {message_info} from {username} ({user_id} / @{username}) in chat {chat_id}.")
 
     try:
         context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
