@@ -121,6 +121,7 @@ def get_emoji(emoji):
         "add": "➕",
         "bug": "👻",
         "restart": "🔄",
+        "git_pull": "⬇️",
         "question_mark": "❓"
     }
 

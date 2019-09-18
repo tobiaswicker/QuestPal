@@ -206,7 +206,9 @@ def start(update: Update, context: CallbackContext):
 
     if user.id in bot_devs:
         keyboard.append([InlineKeyboardButton(text=f"{get_emoji('restart')} {get_text(lang, 'restart')}",
-                                              callback_data='restart')])
+                                              callback_data='restart_bot'),
+                         InlineKeyboardButton(text=f"{get_emoji('git_pull')} {get_text(lang, 'git_pull')}",
+                                              callback_data='git_pull')])
 
     # user pressed button, edit message
     if is_button_action:
@@ -434,7 +436,7 @@ def delete_data(update: Update, context: CallbackContext):
         for key in list(context.chat_data):
             del context.chat_data[key]
 
-        # don't return sent here because we don't want to trigger logging which
+        # don't return sent here because logging should not be triggered which
         # would create a new user entry
         return
 

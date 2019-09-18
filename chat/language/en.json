@@ -15,6 +15,7 @@
 	"quests_summary": "There are currently *{quests_count}* quests that match your criteria.",
 	"no_quests_summary": "There are currently *no* quests that match your criteria.",
     "restart": "Restart Bot",
+    "git_pull": "Git Pull",
 	"quests_summary_hint": "Select _{hunt_quests}_, to start the hunt.",
 	"select_area": "Select Area",
 	"select_center_point": "Set Center Point",

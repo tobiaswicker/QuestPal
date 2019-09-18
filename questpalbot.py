@@ -19,7 +19,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 from bot.messagequeuebot import MQBot
 
 from chat import chat, conversation, utils, profile
-from chat.admin import restart
+from chat.admin import restart, git_pull
 from chat.config import bot_token, bot_use_message_queue, bot_provider, log_file, \
     mysql_host, mysql_port, mysql_user, mysql_password, mysql_db
 from chat.utils import extract_ids, get_text, get_emoji, message_user, MessageType, MessageCategory, notify_devs, \
@@ -245,7 +245,8 @@ def main():
     dp = updater.dispatcher
 
     # restart handler for devs / admins
-    dp.add_handler(CallbackQueryHandler(callback=partial(restart, updater=updater), pattern='^restart$'))
+    dp.add_handler(CallbackQueryHandler(callback=partial(restart, updater=updater), pattern='^restart_bot$'))
+    dp.add_handler(CallbackQueryHandler(callback=partial(git_pull, updater=updater), pattern='^git_pull$'))
 
     # overview
     dp.add_handler(CommandHandler(callback=chat.start, command='start'))
