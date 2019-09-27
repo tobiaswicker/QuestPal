@@ -76,7 +76,7 @@
 	"hunt_quest_count_open": "Es verbleiben noch *{open}* offene Quests.",
 	"hunt_quest_count_skipped": "Es verbleiben noch *{skipped}* übersprungene Quests.",
 	"hunt_quest_count_open_and_skipped": "Es verbleiben noch *{open}* offene und *{skipped}* übersprungene Quests.",
-	"hunt_quest_closest": "*Nächste Quest:*\n{quest_name}\n\n*Belohnung:*\n{quest_reward}\n\n*Pokéstop:*\n{pokestop_name}\n\n*Entfernung:*\n{distance} m Luftlinie\n\n*Standort:*",
+	"hunt_quest_closest": "*Nächste Quest:*\n`{quest_name}`\n\n*Belohnung:*\n`{quest_reward}`\n\n*Pokéstop:*\n`{pokestop_name}`\n\n*Entfernung:*\n{distance} m Luftlinie\n\n*Standort:*",
     "hunt_quest_ignore_info": "Wenn du diesen Quest-Standort ignorierst, wird er vollständig aus der heutigen Warteschlange entfernt.",
     "hunt_quest_ignore_confirm": "Möchtest du diesen Quest-Standort wirklich ignorieren?",
 	"hunt_quest_all_done": "*Glückwunsch!* Du hast alle Quests für heute abgearbeitet!",
