@@ -216,6 +216,9 @@ def extract_ids(update):
     elif isinstance(update, Promise):
         message = update.result()
         user = message.from_user
+    elif isinstance(update, Update):
+        message = update.effective_message
+        user = update.effective_user
     else:
         message = update
         user = update.from_user
