@@ -149,7 +149,7 @@ def load_shinies(context: CallbackContext):
 
     for link_tag in wild_shiny_links:
         link = link_tag.attrib['href']
-        dex_id = int(link.replace('/pokemon/', '').replace('-alolan', ''))
+        dex_id = int("".join(digit for digit in link if digit.isdigit()))
         if dex_id not in shiny_pokemon_list:
             shiny_pokemon_list.append(dex_id)
 
