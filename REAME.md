@@ -20,7 +20,11 @@ terminal.
 4. Talk to [@BotFather](https://t.me/BotFather) to get a `token`.
 5. Create a username for yourself in the settings of your Telegram account, if you haven't already done so.
 6. Rename `config-bot.ini.example` to `config-bot.ini` and edit it. 
-Replace `BOT_TOKEN` with your bots `token` as well as `YOUR_TELEGRAM_USERNAME` with your username. Remember that this 
-should be _your_ username, **not** your bots username.
-Fill in the connection details for your MySQL database.
+   - Replace `BOT_TOKEN` with your bots `token`.
+   - Replace `YOUR_TELEGRAM_USERNAME` with your username. Remember that this should be _your_ username, **not** your 
+   bots username.
+   - Add the user ids of all admins and developers to `dev_user_ids`. You can get your user id by contacting 
+   [@JsonDumpBot](https://t.me/JsonDumpBot). Leave this blank if you don't want to get notified about issues (not 
+   recommended).
+   - Fill in the connection details for your MySQL database.
 7. Run the bot from a terminal: `python3 questpalbot.py`
