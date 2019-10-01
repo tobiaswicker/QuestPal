@@ -1,0 +1,33 @@
+[bot]
+# the token of your bot. get it from @BotFather
+token=BOT_TOKEN
+# whether the bot should use a message queue. you probably want this.
+# see https://github.com/python-telegram-bot/python-telegram-bot/wiki/Avoiding-flood-limits
+use_message_queue=True
+# your username
+provider=YOUR_TELEGRAM_USERNAME
+# comma separated list of users that receive a notification with traceback upon an error. get the id from @JsonDumpBot
+# each dev must have had contact with the bot previously.
+dev_user_ids=YOUR_USER_ID,ANOTHER_DEVS_USER_ID
+# file for log messages. this file  contains what you see on the console when running the bot.
+log_file=bot.log
+
+[mysql]
+host=HOST_OR_IP
+port=MYSQL_PORT
+user=MYSQL_USER
+password=MYSQL_PASSWORD
+database=MYSQL_DATABASE
+
+[map]
+# url to the location of your self-hosted maps app decider script which you find at misc/maps.php.
+# defaults to google maps if not set.
+maps_url=
+# url to a map showing all available quests. leave blank if you don't have any.
+quest_map_url=
+
+[tos]
+# signature for the terms of service (tos). update the date every time you change something in the tos.
+country=YOUR_COUNTRY
+city=YOUR_CITY
+date=YYYY-MM-DD
