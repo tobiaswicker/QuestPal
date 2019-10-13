@@ -58,10 +58,10 @@ def git_pull(update: Update, context: CallbackContext, updater: Updater):
         context.bot.answer_callback_query(callback_query_id=query.id, text='Pulling from git repository now.')
 
     try:
-        pull_result = subprocess.check_output(["git", "pull"]).decode()
+        pull_result = subprocess.check_output(["git", "pull"], stderr=subprocess.STDOUT).decode()
     except subprocess.CalledProcessError as e:
         text = f"{get_emoji('bug')} *Bug Report*\n\n" \
-               f"Failed to pull latest changes from github: `{e.output}`"
+               f"Failed to pull latest changes from github: `{e.output.decode()}`"
         notify_devs(text=text)
         return
 
