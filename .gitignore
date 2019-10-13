@@ -2,6 +2,5 @@
 __pycache__/
 config.ini
 message_log/
-stored_data.json
 persistent_data.pickle
-/bot.log
+bot.log
