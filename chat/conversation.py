@@ -980,7 +980,8 @@ def send_next_quest(update: Update, context: CallbackContext):
             text += f"{get_text(lang, 'hunt_quest_count_skipped').format(skipped=len(skipped_quests))}\n\n" \
                     f"{get_quest_summary(chat_data, current_quest, closest_distance)}"
 
-            context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
+            if query:
+                context.bot.answer_callback_query(callback_query_id=query.id, text=popup_text, show_alert=False)
 
             message_user(bot=context.bot,
                          chat_id=chat_id,
