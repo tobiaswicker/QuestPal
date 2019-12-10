@@ -88,5 +88,18 @@
   "FRIENDFEST_2019_CATCH_M": "Friend Fest: Catch a Nidoran♂",
   "FRIENDFEST_2019_NEW_FRIEND_MEDIUM": "Friend Fest: Make 3 new friends",
   "FRIENDFEST_2019_TRADE": "Friend Fest: Trade a Pokémon with a friend",
-  "FRIENDFEST_2019_TRAINER_BATTLE_EASY": "Friend Fest: Win a Trainer Battle against another Trainer"
+  "FRIENDFEST_2019_TRAINER_BATTLE_EASY": "Friend Fest: Win a Trainer Battle against another Trainer",
+  "EVO_2019_CATCH_H": "Evolution Event: Catch 10 Horsea",
+  "EVO_2019_CATCH_O": "Evolution Event: Catch 5 Onix",
+  "EVO_2019_CATCH_P": "Evolution Event: Catch 5 Porygon",
+  "EVO_2019_CATCH_P_S": "Evolution Event: Catch 10 Poliwag or Slowpoke",
+  "EVO_2019_CATCH_S": "Evolution Event: Catch 10 Sunkern",
+  "EVO_2019_EVOLVE_F": "Evolution Event: Evolve a Feebas",
+  "EVO_2019_EVOLVE_1": "Evolution Event: Evolve 5 Pokémon",
+  "EVO_2019_EVOLVE_2": "Evolution Event: Evolve 10 Pokémon",
+  "EVO_2019_EVOLVE_ITEM": "Evolution Event: Use an item to evolve a Pokémon",
+  "EVO_2019_EVOLVE_O": "Evolution Event: Evolve an Onix",
+  "EVO_2019_HATCH": "Evolution Event: Hatch 7 Eggs",
+  "EVO_2019_RAID": "Evolution Event: Win 5 raids",
+  "EVO_2019_ROCKET_L": "Evolution Event: Win 3 times against the Team GO Rocket Leaders"
 }

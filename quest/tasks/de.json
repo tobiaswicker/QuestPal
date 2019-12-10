@@ -88,5 +88,18 @@
   "FRIENDFEST_2019_CATCH_M": "Freundschaftsfest: Fange ein Nidoran♂",
   "FRIENDFEST_2019_NEW_FRIEND_MEDIUM": "Freundschaftsfest: Schließe drei neue Freundschaften.",
   "FRIENDFEST_2019_TRADE": "Freundschaftsfest: Tausche ein Pokémon mit einem Freund.",
-  "FRIENDFEST_2019_TRAINER_BATTLE_EASY": "Freundschaftsfest: Gewinne einen Trainerkampf gegen einen anderen Trainer."
+  "FRIENDFEST_2019_TRAINER_BATTLE_EASY": "Freundschaftsfest: Gewinne einen Trainerkampf gegen einen anderen Trainer.",
+  "EVO_2019_CATCH_H": "Entwicklungs-Event: Fange 10 Seeper.",
+  "EVO_2019_CATCH_O": "Entwicklungs-Event: Fange 5 Onix.",
+  "EVO_2019_CATCH_P": "Entwicklungs-Event: Fange 5 Porygon.",
+  "EVO_2019_CATCH_P_S": "Entwicklungs-Event: Fange 10 Quapsel oder Flegmon.",
+  "EVO_2019_CATCH_S": "Entwicklungs-Event: Fange 10 Sonnkern.",
+  "EVO_2019_EVOLVE_F": "Entwicklungs-Event: Entwickle ein Barschwa.",
+  "EVO_2019_EVOLVE_1": "Entwicklungs-Event: Entwickle 5 Pokémon.",
+  "EVO_2019_EVOLVE_2": "Entwicklungs-Event: Entwickle 10 Pokémon.",
+  "EVO_2019_EVOLVE_ITEM": "Entwicklungs-Event: Verwende ein Item, um ein Pokémon zu entwickeln.",
+  "EVO_2019_EVOLVE_O": "Entwicklungs-Event: Entwickle ein Onix.",
+  "EVO_2019_HATCH": "Entwicklungs-Event: Brüte 7 Eier aus.",
+  "EVO_2019_RAID": "Entwicklungs-Event: Gewinne 5 Raids.",
+  "EVO_2019_ROCKET_L": "Entwicklungs-Event: Gewinne 3 Kämpfe gegen Team GO Rocket-Anführer."
 }
