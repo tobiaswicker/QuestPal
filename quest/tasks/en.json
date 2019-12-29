@@ -101,5 +101,10 @@
   "EVO_2019_EVOLVE_O": "Evolution Event: Evolve an Onix",
   "EVO_2019_HATCH": "Evolution Event: Hatch 7 Eggs",
   "EVO_2019_RAID": "Evolution Event: Win 5 raids",
-  "EVO_2019_ROCKET_L": "Evolution Event: Win 3 times against the Team GO Rocket Leaders"
+  "EVO_2019_ROCKET_L": "Evolution Event: Win 3 times against the Team GO Rocket Leaders",
+  "HOLIDAY_2019_CATCH_1": "Holiday Event: Catch 5 Ice-type Pokémon",
+  "HOLIDAY_2019_CATCH_2": "Holiday Event: Catch 10 Ice-type Pokémon",
+  "HOLIDAY_2019_CATCH_SD": "Holiday Event: Catch 5 Delibird or Snover",
+  "HOLIDAY_2019_HATCH": "Holiday Event: Hatch 7 Eggs",
+  "HOLIDAY_2019_SNAPSHOT": "Holiday Event: Take 5 snapshots of Ice-type Pokémon"
 }
